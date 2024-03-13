@@ -174,18 +174,17 @@ PARAM ::= ID: REG_TYPE
 ```
 EXPR ::= INT
        | { VAR_LIST EXPR_LIST }    -- block
-       | ()
        | if PRED then EXPR
        | if PRED then EXPR else EXPR
        | for ID = EXPR to EXPR do EXPR
        | LVAL <- EXPR
        | ID(EXPR_ARGS)      -- comma separated
-       | ID.ID(EXPR_ARGS)   -- method call
+       | EXPR.ID(EXPR_ARGS)   -- method call
        | match EXPR with MATCH_CASES
        | UNOP EXPR
        | EXPR BINOP EXPR
        | ID
-       | ID[EXPR]
+       | EXPR[EXPR]
 
 LVAL ::= ID
        | ID[EXPR]
