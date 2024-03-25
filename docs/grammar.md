@@ -174,7 +174,6 @@ PARAM ::= ID: REG_TYPE
 ```
 EXPR ::= INT
        | { VAR_LIST EXPR_LIST }    -- block
-       | if PRED then EXPR
        | if PRED then EXPR else EXPR
        | for ID = EXPR to EXPR do EXPR
        | LVAL <- EXPR
@@ -214,7 +213,7 @@ EXPR_ARGS ::= ""
             | EXPR
             | EXPR, EXPR_ARGS
 
-UNOP ::= clamp
+UNOP ::= transmute
        | shrink
        | extend
        | sign-extend

@@ -4,4 +4,4 @@ import Parser
 import Lexer
 
 main :: IO ()
-main = getContents >>= print . parse . lexer
+main = getLine >>= print . parse . lexer
