@@ -1,0 +1,20 @@
+{
+  var x: bits[8] = 42
+  {
+    var y: range[-10, 5] = 6
+    x + y
+    if true then
+      50
+    else
+      5 + 6
+    (if false then
+      25
+    else
+      3) + 4
+    match x with {
+      50 -> 40
+      40 -> 50
+    }
+    foo(x)
+  }
+}

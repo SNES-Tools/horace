@@ -2,8 +2,6 @@ module AST where
 
 type Id = String
 
-type Pred = () -- placeholder
-
 data Expr
   = ExprLit Int
   | ExprBlock [Var] [Expr]
@@ -11,17 +9,25 @@ data Expr
   | ExprFor Id Expr Expr Expr
   | ExprAssign LVal Expr
   | ExprCall Id [Expr]
-  | ExprMethodCall Expr Id [Expr]
+  | ExprMethodCall Id Id [Expr]
+  | ExprMatch Expr [Case]
   | ExprUnOp UnOp Expr
   | ExprBinOp BinOp Expr Expr
   | ExprVar Id
   | ExprArrIndex Expr Expr
   deriving (Show)
 
---        | ExprMatch Expr [Case]       -- omitted
 data LVal
   = LValId Id
   | LValArrIndex Id Expr
+  deriving (Show)
+
+type Case = (Pattern, Expr)
+
+data Pattern
+  = PatWildcard
+  | PatLit Int
+  | PatData Id [Pattern]
   deriving (Show)
 
 data Var =
@@ -29,7 +35,7 @@ data Var =
   deriving (Show)
 
 data UnOp
-  = UnOpClamp
+  = UnOpTransmute
   | UnOpShrink
   | UnOpExtend
   | UnOpSignExtend
@@ -47,6 +53,35 @@ data BinOp
   | BinOpBitAnd
   | BinOpBitOr
   | BinOpBitEor
+  deriving (Show)
+
+data Pred
+  = PredLit Bool
+  | PredUnOp PredUnOp Pred
+  | PredBinOp PredBinOp Pred Pred
+  | PredComp CompOp Expr Expr
+  deriving (Show)
+
+data PredUnOp =
+  PredNot
+  deriving (Show)
+
+data PredBinOp
+  = PredAnd
+  | PredOr
+  deriving (Show)
+
+data CompOp
+  = CompEq
+  | CompNeq
+  | CompLe
+  | CompLeq
+  | CompGe
+  | CompGeq
+  | CompLeS
+  | CompLeqS
+  | CompGeS
+  | CompGeqS
   deriving (Show)
 
 data Type

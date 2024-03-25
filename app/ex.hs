@@ -1,0 +1,1 @@
+ExprBlock [Var "x" (TypeBits 8) (ExprLit 42)] [ExprBlock [Var "y" (TypeRange (-10) 5) (ExprLit 6)] [ExprBinOp BinOpAdd (ExprVar "x") (ExprVar "y"),ExprIf (PredLit True) (ExprLit 50) (ExprBinOp BinOpAdd (ExprLit 5) (ExprLit 6)),ExprBinOp BinOpAdd (ExprIf (PredLit False) (ExprLit 25) (ExprLit 3)) (ExprLit 4)]]

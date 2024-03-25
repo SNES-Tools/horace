@@ -1,4 +1,7 @@
 module Main where
 
+import Parser
+import Lexer
+
 main :: IO ()
-main = putStrLn "Hello, Haskell!"
+main = getContents >>= print . parse . lexer

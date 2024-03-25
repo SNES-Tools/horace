@@ -2,6 +2,8 @@ module Token where
 
 data Token
   = TokenInt Int
+  | TokenId String
+  | TokenIdC String
   | TokenLBrace
   | TokenRBrace
   | TokenIf
@@ -22,9 +24,9 @@ data Token
   | TokenRBracket
   | TokenUnderscore
   | TokenComma
-  | TokenVar String
+  | TokenVar
   | TokenColon
-  | TokenClamp
+  | TokenTransmute
   | TokenShrink
   | TokenExtend
   | TokenSignExtend
@@ -39,6 +41,22 @@ data Token
   | TokenAmphersand
   | TokenPipe
   | TokenCaret
+  | TokenDot
+  -- predicate stuff
+  | TokenTrue
+  | TokenFalse
+  | TokenAnd
+  | TokenOr
+  | TokenNot
+  | TokenNeq
+  | TokenLe
+  | TokenLeS
+  | TokenLeq
+  | TokenLeqS
+  | TokenGe
+  | TokenGeS
+  | TokenGeq
+  | TokenGeqS
   -- REG_TYPE
   | TokenBits
   | TokenRange
