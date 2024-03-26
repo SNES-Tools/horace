@@ -40,11 +40,11 @@ maximalRange = (minRange, maxRange)
 verifyType :: Type -> Bool
 verifyType (TypeArray t l) =
   if verifyType t
-    then l <| (minLength, maxLength)
+    then l <? (minLength, maxLength)
     else False -- some idiomatic way to do this
 verifyType (TypeSprite _) = True
-verifyType (TypeBits b) = b <| (minBits, maxBits)
-verifyType (TypeRange l u) = (l, u) <: maximalRange
+verifyType (TypeBits b) = b <? (minBits, maxBits)
+verifyType (TypeRange l u) = (l, u) <:? maximalRange
 verifyType (TypeData _) = True
 verifyType TypeVoid = True
 
@@ -53,6 +53,7 @@ data TypePos
   = PosBits Word Word
   | PosRange Int Int
   | PosLit Word Int -- only case is for int literals (bits, value)
+  | PosVoid
   deriving (Eq)
 
 instance Show TypePos where
@@ -62,14 +63,15 @@ instance Show TypePos where
   show (PosRange l u) = "range[" ++ show l ++ "," ++ show u ++ "]"
   show (PosLit b r) =
     "bits[" ++ show b ++ "] or range[" ++ show r ++ "," ++ show r ++ "]"
+  show PosVoid = "void"
 
-type Context = [(Id, TypePos)]
+type Context = [(Id, Type)]
 
 newContext :: Context
 newContext = []
 
-ext :: Context -> Id -> TypePos -> Context
-ext c id t = (id, t) : c
+extendContext :: Context -> Id -> Type -> Context
+extendContext c id t = (id, t) : c
 
 typeof :: Expr -> TypePos
 typeof e =
@@ -78,18 +80,7 @@ typeof e =
     Right s -> error $ "Type error: " ++ s
 
 typeofExpr :: Context -> Expr -> Either TypePos String
-typeofExpr _ (ExprLit i)
-  | i > 0 =
-    let bits = ceiling $ logBase 2 $ (fromIntegral i) + 1
-     in constant bits
-  | i == 0 = constant minBits
-  | i < 0 =
-    let bits = ceiling $ logBase 2 $ (abs $ fromIntegral i)
-     in constant bits
-  where
-    constant x =
-      let x' = max x minBits
-       in Left $ PosLit x' i
+typeofExpr _ (ExprLit i) = Left $ constantType i
 typeofExpr c (ExprIf p e1 e2) =
   case typeofPred c p of
     Left _ ->
@@ -141,7 +132,80 @@ typeofExpr c (ExprBinOp BinOpBitEor e1 e2) =
     (Right e, _) -> Right e
     (_, Right e) -> Right e
     (Left t1, Left t2) -> intersectBits t1 t2
-typeofExpr _ _ = undefined
+typeofExpr c (ExprBinOp BinOpAdd e1 e2) =
+  case (typeofExpr c e1, typeofExpr c e2) of
+    (Right e, _) -> Right e
+    (_, Right e) -> Right e
+    -- no handling of constant addition which is outside usual bounds!!
+    (Left (PosLit _ i1), Left (PosLit _ i2)) -> Left $ constantType $ i1 + i2
+    -- bit cases
+    (Left b1@(PosBits _ _), Left b2@(PosBits _ _)) -> intersectBits b1 b2
+    (Left (PosLit b _), Left b2@(PosBits _ _)) -> intersectBits (PosBits b b) b2
+    (Left b1@(PosBits _ _), Left (PosLit b _)) -> intersectBits b1 (PosBits b b)
+    -- range cases
+    (Left (PosRange l1 u1), Left (PosRange l2 u2)) ->
+      Left $ PosRange (l1 + l2) (u1 + u2)
+    (Left (PosLit _ v), Left (PosRange l2 u2)) ->
+      Left $ PosRange (v + l2) (v + u2)
+    (Left (PosRange l1 u1), Left (PosLit _ v)) ->
+      Left $ PosRange (l1 + v) (u1 + v)
+typeofExpr c (ExprBinOp BinOpSub e1 e2) =
+  case (typeofExpr c e1, typeofExpr c e2) of
+    (Right e, _) -> Right e
+    (_, Right e) -> Right e
+    (Left (PosLit _ i1), Left (PosLit _ i2)) -> Left $ constantType $ i1 - i2
+    -- no handling of constant addition which is outside usual bounds!!
+    (Left b1@(PosBits _ _), Left b2@(PosBits _ _)) -> intersectBits b1 b2
+    (Left (PosRange l1 u1), Left (PosRange l2 u2)) ->
+      Left $ PosRange (l1 - u2) (u2 - l1)
+{-
+  for typeofExpr, we expect it to be that the bindings in `vs` are done
+  sequentially, i.e. declarations are able to see the previous binding
+-}
+typeofExpr c (ExprBlock vs es) =
+  case typeofVars c vs of
+    Right e -> Right e
+    Left c' -> foldl foo (Left PosVoid) es
+      where foo r@(Right _) _ = r
+            foo _ e = typeofExpr c' e
+typeofExpr c (ExprVar id) =
+  case lookup id c of
+    Just (TypeBits b) -> Left $ PosBits b b
+    Just (TypeRange l u) -> Left $ PosRange l u
+    Nothing -> Right $ "variable not in scope: " ++ id
+typeofExpr c (ExprAssign (LValId id) e) =
+  case lookup id c of
+    Just t ->
+      case typeofExpr c e of
+        r@(Right _) -> r
+        Left t' ->
+          if t' <: t
+            then Left t'
+            else Right "type not compatible for assignment"
+    Nothing -> Right $ "variable not in scope: " ++ id
+typeofExpr _ _ = Right "feature is undefined"
+
+-- this does not verify if the written type declaration is legal!
+typeofVars :: Context -> [Var] -> Either Context String
+typeofVars c = foldl foo (Left c)
+  where
+    foo r@(Right _) _ = r
+    foo (Left c) (Var id t e) =
+      case typeofExpr c e of
+        Right e -> Right e
+        Left t' ->
+          if t' <: t
+            then Left $ extendContext c id t
+            else Right "type not compatible for assignment"
+
+-- type compatability checking for assignments
+-- Type is the AST representation of the written type
+(<:) :: TypePos -> Type -> Bool
+(PosBits l1 u1) <: (TypeBits b) = b <? (l1, u1)
+(PosLit b' _) <: (TypeBits b) = b == b'
+(PosRange l u) <: (TypeRange l' u') = (l, u) <:? (l', u')
+(PosLit _ r) <: (TypeRange l' u') = (r, r) <:? (l', u')
+_ <: _ = False
 
 -- predicates have no type, but is just a type-checker
 typeofPred :: Context -> Pred -> Either () String
@@ -190,14 +254,28 @@ intersectBits (PosLit b1 _) (PosLit b2 _) =
     Just (l, u) -> Left $ PosBits l u
 intersectBits _ _ = Right "operands of bitwise operators are not bit types"
 
+constantType :: Int -> TypePos
+constantType i
+  | i > 0 =
+    let bits = ceiling $ logBase 2 $ (fromIntegral i) + 1
+     in constant bits
+  | i == 0 = constant minBits
+  | i < 0 =
+    let bits = ceiling $ logBase 2 $ (abs $ fromIntegral i)
+     in constant bits
+  where
+    constant x =
+      let x' = max x minBits
+       in PosLit x' i
+
 (/\) :: (Integral a) => (a, a) -> (a, a) -> Maybe (a, a)
 (l1, u1) /\ (l2, u2) =
   if l2 > u1 || l1 > u2
     then Nothing
     else Just (max l1 l2, min u1 u2)
 
-(<:) :: (Integral a) => (a, a) -> (a, a) -> Bool
-(m1, n1) <: (m2, n2) = m1 >= m2 && n1 <= n2
+(<:?) :: (Integral a) => (a, a) -> (a, a) -> Bool
+(m1, n1) <:? (m2, n2) = m1 >= m2 && n1 <= n2
 
-(<|) :: (Integral a) => a -> (a, a) -> Bool
-n <| (l, u) = n >= l && n <= u
+(<?) :: (Integral a) => a -> (a, a) -> Bool
+n <? (l, u) = n >= l && n <= u

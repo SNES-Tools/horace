@@ -6,15 +6,15 @@ data Expr
   = ExprLit Int
   | ExprBlock [Var] [Expr]
   | ExprIf Pred Expr Expr
-  | ExprFor Id Expr Expr Expr
+  | ExprFor Id Expr Expr Expr   -- not planned to be supported yet
   | ExprAssign LVal Expr
-  | ExprCall Id [Expr]
-  | ExprMethodCall Id Id [Expr]
-  | ExprMatch Expr [Case]
+  | ExprCall Id [Expr]          -- not planned to be supported yet
+  | ExprMethodCall Id Id [Expr] -- not planned to be supported yet
+  | ExprMatch Expr [Case]       -- not planned to be supported yet
   | ExprUnOp UnOp Expr
   | ExprBinOp BinOp Expr Expr
   | ExprVar Id
-  | ExprArrIndex Expr Expr
+  | ExprArrIndex Expr Expr      -- not planned to be supported yet
   deriving (Show)
 
 data LVal
@@ -39,17 +39,17 @@ data UnOp
   | UnOpShrink
   | UnOpExtend
   | UnOpSignExtend
-  | UnOpDisplay
+  | UnOpDisplay   -- not yet supported
   deriving (Show)
 
 data BinOp
   = BinOpAdd
   | BinOpSub
-  | BinOpMult
-  | BinOpDiv
-  | BinOpMod
-  | BinOpLShift
-  | BinOpRShift
+  | BinOpMult   -- not yet supported
+  | BinOpDiv    -- not yet supported
+  | BinOpMod    -- not yet supported
+  | BinOpLShift -- not yet supported
+  | BinOpRShift -- not yet supported
   | BinOpBitAnd
   | BinOpBitOr
   | BinOpBitEor

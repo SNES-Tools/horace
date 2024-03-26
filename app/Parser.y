@@ -38,7 +38,7 @@ import Token
   ext   { TokenExtend }
   sext  { TokenSignExtend }
   '+'   { TokenPlus }
-  '*'   { TokenMult }
+  '-'   { TokenMinus }
   '&'   { TokenAmphersand }
   '|'   { TokenPipe }
   '^'   { TokenCaret }
@@ -66,8 +66,7 @@ import Token
 
 %right else do
 %left '.'
-%left '+'
-%left '*'
+%left '+' '-'
 %left '&'
 %left '^'
 %left '|'
@@ -92,7 +91,7 @@ expr  : int                             { ExprLit $1 }
       | sext expr                       { ExprUnOp UnOpSignExtend $2 }
       | shrink expr                     { ExprUnOp UnOpShrink $2 }
       | expr '+' expr                   { ExprBinOp BinOpAdd $1 $3 }
-      | expr '*' expr                   { ExprBinOp BinOpMult $1 $3 }
+      | expr '-' expr                   { ExprBinOp BinOpSub $1 $3 }
       | expr '&' expr                   { ExprBinOp BinOpBitAnd $1 $3 }
       | expr '^' expr                   { ExprBinOp BinOpBitEor $1 $3 }
       | expr '|' expr                   { ExprBinOp BinOpBitOr $1 $3 }

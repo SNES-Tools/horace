@@ -1,0 +1,6 @@
+{
+  var x: range[-10, 10] = 5
+  var y: bits[16] = extend 768
+  x <- 10
+  extend ((extend 29) + 53)
+}
