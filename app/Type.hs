@@ -73,13 +73,13 @@ newContext = []
 extendContext :: Context -> Id -> Type -> Context
 extendContext c id t = (id, t) : c
 
-typeof :: Expr -> TypePos
+typeof :: Expr -> Either TypePos String
 typeof e =
   case typeofExpr newContext e of
-    Left t -> t
-    Right s -> error $ "Type error: " ++ s
+    Left t -> Left t
+    Right s -> Right $ "Type error: " ++ unwords s
 
-typeofExpr :: Context -> Expr -> Either TypePos String
+typeofExpr :: Context -> Expr -> Either TypePos [String]
 typeofExpr _ (ExprLit i) = Left $ constantType i
 typeofExpr c (ExprIf p e1 e2) =
   case typeofPred c p of
@@ -90,7 +90,7 @@ typeofExpr c (ExprIf p e1 e2) =
         (Left t1, Left t2) ->
           if t1 == t2
             then Left t1
-            else Right "types in the if expression do not match"
+            else Right ["types in the if expression do not match"]
           -- think: must they match exactly?
     Right e -> Right e
 typeofExpr c (ExprUnOp UnOpTransmute e) =
@@ -98,25 +98,25 @@ typeofExpr c (ExprUnOp UnOpTransmute e) =
     r@(Right _) -> r
     Left (PosRange _ _) -> Left $ PosRange minRange maxRange
     Left (PosLit _ _) -> Left $ PosRange minRange maxRange
-    _ -> Right "transmute used on a non-range type"
+    _ -> Right ["transmute used on a non-range type"]
 typeofExpr c (ExprUnOp UnOpShrink e) =
   case typeofExpr c e of
     r@(Right _) -> r
     Left (PosBits _ u) -> Left $ PosBits minBits u
     Left (PosLit b _) -> Left $ PosBits minBits b
-    _ -> Right "shrink used on a non-bits type"
+    _ -> Right ["shrink used on a non-bits type"]
 typeofExpr c (ExprUnOp UnOpExtend e) =
   case typeofExpr c e of
     r@(Right _) -> r
     Left (PosBits l _) -> Left $ PosBits l maxBits
     Left (PosLit b _) -> Left $ PosBits b maxBits
-    _ -> Right "extend used on a non-bits type"
+    _ -> Right ["extend used on a non-bits type"]
 typeofExpr c (ExprUnOp UnOpSignExtend e) =
   case typeofExpr c e of
     r@(Right _) -> r
     Left (PosBits l _) -> Left $ PosBits l maxBits
     Left (PosLit b _) -> Left $ PosBits b maxBits
-    _ -> Right "sign-extend used on a non-bits type"
+    _ -> Right ["sign-extend used on a non-bits type"]
 typeofExpr c (ExprBinOp BinOpBitAnd e1 e2) =
   case (typeofExpr c e1, typeofExpr c e2) of
     (Right e, _) -> Right e
@@ -149,15 +149,25 @@ typeofExpr c (ExprBinOp BinOpAdd e1 e2) =
       Left $ PosRange (v + l2) (v + u2)
     (Left (PosRange l1 u1), Left (PosLit _ v)) ->
       Left $ PosRange (l1 + v) (u1 + v)
+    _ -> Right ["addition of incompatible types"]
 typeofExpr c (ExprBinOp BinOpSub e1 e2) =
   case (typeofExpr c e1, typeofExpr c e2) of
     (Right e, _) -> Right e
     (_, Right e) -> Right e
-    (Left (PosLit _ i1), Left (PosLit _ i2)) -> Left $ constantType $ i1 - i2
     -- no handling of constant addition which is outside usual bounds!!
+    (Left (PosLit _ i1), Left (PosLit _ i2)) -> Left $ constantType $ i1 - i2
+    -- bit cases
     (Left b1@(PosBits _ _), Left b2@(PosBits _ _)) -> intersectBits b1 b2
+    (Left (PosLit b _), Left b2@(PosBits _ _)) -> intersectBits (PosBits b b) b2
+    (Left b1@(PosBits _ _), Left (PosLit b _)) -> intersectBits b1 (PosBits b b)
+    -- range cases
     (Left (PosRange l1 u1), Left (PosRange l2 u2)) ->
-      Left $ PosRange (l1 - u2) (u2 - l1)
+      Left $ PosRange (l1 - u2) (u1 - l2)
+    (Left (PosLit _ v), Left (PosRange l2 u2)) ->
+      Left $ PosRange (v - u2) (v - l2)
+    (Left (PosRange l1 u1), Left (PosLit _ v)) ->
+      Left $ PosRange (l1 - v) (u1 - v)
+    _ -> Right ["subtraction of incompatible types"]
 {-
   for typeofExpr, we expect it to be that the bindings in `vs` are done
   sequentially, i.e. declarations are able to see the previous binding
@@ -172,7 +182,7 @@ typeofExpr c (ExprVar id) =
   case lookup id c of
     Just (TypeBits b) -> Left $ PosBits b b
     Just (TypeRange l u) -> Left $ PosRange l u
-    Nothing -> Right $ "variable not in scope: " ++ id
+    Nothing -> Right ["variable not in scope:", id]
 typeofExpr c (ExprAssign (LValId id) e) =
   case lookup id c of
     Just t ->
@@ -181,12 +191,12 @@ typeofExpr c (ExprAssign (LValId id) e) =
         Left t' ->
           if t' <: t
             then Left t'
-            else Right "type not compatible for assignment"
-    Nothing -> Right $ "variable not in scope: " ++ id
-typeofExpr _ _ = Right "feature is undefined"
+            else Right ["type not compatible for assignment"]
+    Nothing -> Right ["variable not in scope:", id]
+typeofExpr _ _ = Right ["feature is undefined"]
 
 -- this does not verify if the written type declaration is legal!
-typeofVars :: Context -> [Var] -> Either Context String
+typeofVars :: Context -> [Var] -> Either Context [String]
 typeofVars c = foldl foo (Left c)
   where
     foo r@(Right _) _ = r
@@ -195,8 +205,17 @@ typeofVars c = foldl foo (Left c)
         Right e -> Right e
         Left t' ->
           if t' <: t
-            then Left $ extendContext c id t
-            else Right "type not compatible for assignment"
+            then case lookup id c of
+                   Just _ -> Right ["variable already in scope: ", id]
+                   Nothing -> Left $ extendContext c id t
+            else Right
+                   [ "type not compatible for assignment. Variable"
+                   , id
+                   , "is of type"
+                   , show t
+                   , "while expression is type"
+                   , show t'
+                   ]
 
 -- type compatability checking for assignments
 -- Type is the AST representation of the written type
@@ -208,7 +227,7 @@ typeofVars c = foldl foo (Left c)
 _ <: _ = False
 
 -- predicates have no type, but is just a type-checker
-typeofPred :: Context -> Pred -> Either () String
+typeofPred :: Context -> Pred -> Either () [String]
 typeofPred _ (PredLit _) = Left ()
 typeofPred c (PredUnOp _ p) =
   case typeofPred c p of
@@ -235,24 +254,24 @@ isRange (PosRange _ _) = True
 isRange (PosLit _ _) = True
 isRange _ = False
 
-intersectBits :: TypePos -> TypePos -> Either TypePos String
+intersectBits :: TypePos -> TypePos -> Either TypePos [String]
 intersectBits (PosBits l1 u1) (PosBits l2 u2) =
   case (l1, u1) /\ (l2, u2) of
-    Nothing -> Right "bit types are disjoint"
+    Nothing -> Right ["bit types are disjoint"]
     Just (l, u) -> Left $ PosBits l u
 intersectBits (PosBits l u) (PosLit b _) =
   case (l, u) /\ (b, b) of
-    Nothing -> Right "bit types are disjoint"
+    Nothing -> Right ["bit types are disjoint"]
     Just (l, u) -> Left $ PosBits l u
 intersectBits (PosLit b _) (PosBits l u) =
   case (l, u) /\ (b, b) of
-    Nothing -> Right "bit types are disjoint"
+    Nothing -> Right ["bit types are disjoint"]
     Just (l, u) -> Left $ PosBits l u
 intersectBits (PosLit b1 _) (PosLit b2 _) =
   case (b1, b1) /\ (b2, b2) of
-    Nothing -> Right "bit types are disjoint"
+    Nothing -> Right ["bit types are disjoint"]
     Just (l, u) -> Left $ PosBits l u
-intersectBits _ _ = Right "operands of bitwise operators are not bit types"
+intersectBits _ _ = Right ["operands of bitwise operators are not bit types"]
 
 constantType :: Int -> TypePos
 constantType i

@@ -19,9 +19,13 @@ main = do
   putStr "AST: "
   print ast
 
-  putStr "Type: "
-  print $ typeof ast
+  case typeof ast of
+    Left t -> do
+                putStr "Type: "
+                print t
+    Right e -> putStrLn e
 
+{-
 repl :: IO ()
 repl = do
   putStr "> "
@@ -39,6 +43,7 @@ repl = do
   print ast
 
   putStr "Type: "
-  print $ typeof ast
+  typeof ast
 
   repl
+-}
