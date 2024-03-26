@@ -67,7 +67,7 @@ lexVar cs =
     ("transmute", rest) -> TokenTransmute : lexer rest
     ("shrink", rest) -> TokenShrink : lexer rest
     ("extend", rest) -> TokenExtend : lexer rest
-    ("sign-extend", rest) -> TokenSignExtend : lexer rest
+    ("sign", '-':'e':'x':'t':'e':'n':'d':rest) -> TokenSignExtend : lexer rest
     ("display", rest) -> TokenDisplay : lexer rest
     ("bits", rest) -> TokenBits : lexer rest
     ("range", rest) -> TokenRange : lexer rest

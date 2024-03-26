@@ -39,6 +39,9 @@ import Token
   sext  { TokenSignExtend }
   '+'   { TokenPlus }
   '*'   { TokenMult }
+  '&'   { TokenAmphersand }
+  '|'   { TokenPipe }
+  '^'   { TokenCaret }
   '='   { TokenEq }
   '('   { TokenLParen }
   ')'   { TokenRParen }
@@ -62,14 +65,17 @@ import Token
   '>=$' { TokenGeqS }
 
 %right else do
-%right trans shrink ext sext
 %left '.'
 %left '+'
 %left '*'
+%left '&'
+%left '^'
+%left '|'
 %right not
 %left and
 %left or
 %right '<-'
+%right trans shrink ext sext
 
 %%
 
@@ -87,6 +93,9 @@ expr  : int                             { ExprLit $1 }
       | shrink expr                     { ExprUnOp UnOpShrink $2 }
       | expr '+' expr                   { ExprBinOp BinOpAdd $1 $3 }
       | expr '*' expr                   { ExprBinOp BinOpMult $1 $3 }
+      | expr '&' expr                   { ExprBinOp BinOpBitAnd $1 $3 }
+      | expr '^' expr                   { ExprBinOp BinOpBitEor $1 $3 }
+      | expr '|' expr                   { ExprBinOp BinOpBitOr $1 $3 }
       | id                              { ExprVar $1 }
       | '(' expr ')'                    { $2 }
 
