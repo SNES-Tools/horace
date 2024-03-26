@@ -43,6 +43,7 @@ import Token
   '|'   { TokenPipe }
   '^'   { TokenCaret }
   '='   { TokenEq }
+  '/='  { TokenNeq }
   '('   { TokenLParen }
   ')'   { TokenRParen }
   '{'   { TokenLBrace }
@@ -133,7 +134,9 @@ pred : true             { PredLit True }
      | pred or pred     { PredBinOp PredOr $1 $3 }
      | expr comp expr   { PredComp $2 $1 $3 }
 
-comp : '<'    { CompLe }
+comp : '='    { CompEq }
+     | '/='   { CompNeq }
+     | '<'    { CompLe }
      | '>'    { CompGe }
      | '<='   { CompLeq }
      | '>='   { CompGeq }

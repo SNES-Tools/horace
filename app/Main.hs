@@ -5,6 +5,7 @@ import System.IO
 import Parser
 import Lexer
 import Type
+import Eval
 
 main :: IO ()
 main = do
@@ -24,6 +25,9 @@ main = do
                 putStr "Type: "
                 print t
     Right e -> putStrLn e
+
+  putStr "Eval: "
+  (print . eval) ast
 
 {-
 repl :: IO ()

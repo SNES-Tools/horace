@@ -19,15 +19,15 @@ data Expr
 
 data LVal
   = LValId Id
-  | LValArrIndex Id Expr
+  | LValArrIndex Id Expr        -- not implemented
   deriving (Show)
 
-type Case = (Pattern, Expr)
+type Case = (Pattern, Expr)     -- not implemented
 
 data Pattern
-  = PatWildcard
-  | PatLit Int
-  | PatData Id [Pattern]
+  = PatWildcard                 -- not implemented
+  | PatLit Int                  -- not implemented
+  | PatData Id [Pattern]        -- not implemented
   deriving (Show)
 
 data Var =
@@ -39,7 +39,7 @@ data UnOp
   | UnOpShrink
   | UnOpExtend
   | UnOpSignExtend
-  | UnOpDisplay   -- not yet supported
+  | UnOpDisplay                 -- not implemented
   deriving (Show)
 
 data BinOp
@@ -85,10 +85,10 @@ data CompOp
   deriving (Show)
 
 data Type
-  = TypeArray Type Word
-  | TypeSprite Id
+  = TypeArray Type Word   -- not implemented
+  | TypeSprite Id         -- not implemented
   | TypeBits Word
   | TypeRange Int Int
   | TypeData Id
-  | TypeVoid
+  | TypeVoid              -- not implemented
   deriving (Show)
