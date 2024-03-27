@@ -68,9 +68,15 @@ There is more complicated reasoning when there are multiple operators involved:
       (what should `n` be? minimization or maximization rule?)
       => thinking prefer maximization, so bits[7]
       
-We want to think that in places where the value is not being stored (at a
-variable, which means we would know exactly the size), there is
-
 The type inference only goes one level of depth in the expression, meaning we
 need a lot of bit modifications!
 
+We want to think that in places where the value is being stored (at a
+variable, which means we would know exactly the size) the process of inferring
+the exact bit width is easy.
+
+But if the value is used in a place where we don't know the type, we have to
+make a decision about what the type will be internally...
+
+Thinking about a maximization rule, but what about
+  extend 7 < sign-extend 7  => true
