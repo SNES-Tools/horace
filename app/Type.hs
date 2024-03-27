@@ -280,7 +280,7 @@ constantType i
      in constant bits
   | i == 0 = constant minBits
   | i < 0 =
-    let bits = ceiling $ logBase 2 $ (abs $ fromIntegral i)
+    let bits = ceiling $ logBase 2 $ (abs $ fromIntegral i) + 1
      in constant bits
   where
     constant x =

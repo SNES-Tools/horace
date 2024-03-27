@@ -1,6 +1,7 @@
 module Eval where
 
 import AST
+import Type
 import Data.Bits
 
 data Value
@@ -17,13 +18,12 @@ eval :: Expr -> Value
 eval = evalExpr newEnv
 
 evalExpr :: Env -> Expr -> Value
-evalExpr _ (ExprLit n)
-  | n > 0 =
-    ValBits (ceiling $ logBase 2 $ (fromIntegral n) + 1) (fromIntegral n)
+evalExpr _ e@(ExprLit n)
+  | n > 0  = ValBits (ceiling $ logBase 2 $ (fromIntegral n) + 1) (fromIntegral n)
   | n == 0 = ValBits 1 0
-  | n < 0 = ValBits w ((fromIntegral n) `mod` (2 ^ w))
+  | n < 0  = ValBits w ((fromIntegral n) `mod` (2 ^ w))
   where
-    w = max 1 $ ceiling $ logBase 2 $ fromIntegral $ abs n
+    Left (PosLit w _) = typeof e
 evalExpr env (ExprIf p e1 e2) =
   if evalPred env p
     then evalExpr env e1
@@ -39,7 +39,7 @@ evalPred env (PredBinOp op p1 p2) = op' (evalPred env p1) (evalPred env p2)
     op' =
       case op of
         PredAnd -> (&&)
-        PredOr -> (||)
+        PredOr  -> (||)
 evalPred env (PredComp op e1 e2) =
   case (evalExpr env e1, evalExpr env e2) of
     (b1@(ValBits _ v1), b2@(ValBits _ v2)) ->
@@ -50,23 +50,23 @@ evalPred env (PredComp op e1 e2) =
   where
     op' =
       case op of
-        CompEq -> (==)
-        CompNeq -> (/=)
-        CompLe -> (<)
-        CompLeq -> (<=)
-        CompGe -> (>)
-        CompGeq -> (>=)
-        CompLeS -> (<)
+        CompEq   -> (==)
+        CompNeq  -> (/=)
+        CompLe   -> (<)
+        CompLeq  -> (<=)
+        CompGe   -> (>)
+        CompGeq  -> (>=)
+        CompLeS  -> (<)
         CompLeqS -> (<=)
-        CompGeS -> (>)
+        CompGeS  -> (>)
         CompGeqS -> (>=)
 
 isSignedComp :: CompOp -> Bool
-isSignedComp CompLeS = True
+isSignedComp CompLeS  = True
 isSignedComp CompLeqS = True
-isSignedComp CompGeS = True
+isSignedComp CompGeS  = True
 isSignedComp CompGeqS = True
-isSignedComp _ = False
+isSignedComp _        = False
 
 bitsToSigned :: Value -> Int
 bitsToSigned (ValBits n v) =
