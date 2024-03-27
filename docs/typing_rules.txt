@@ -1,0 +1,76 @@
+The extend operator can be thought of as a function:
+  extend :: bits[m] -> bits[n]    where n >= m
+Suppose we can infer what `m` is. How can we infer what `n` should be?
+
+The most obvious case is when the value is being used where the type is
+concrete:
+  var x: bits[5] = extend 5       n = 5
+There is more complicated reasoning when there are multiple operators involved:
+  x <- 5 + 9
+      5 : bits[3]
+      9 : bits[4]
+      => illegal addition of nonmatching bits
+  x <- extend 5 + extend 9
+      extend 5 : bits[>=3]
+      extend 9 : bits[>=4]
+      => (extend 5 + extend 9) : bits[>=4]
+      => by minimization rule, bits[4]
+      => invalid assignment!
+      (the minimization rule? should be smarter than this...)
+  x <- extend 5 + 9
+      extend 5 : bits[>=3]
+      9 : bits[4]
+      => (extend 5 + 9) : bits[4]
+      => invalid assignment!
+  x <- extend (5 + 9)
+      5 : bits[3]
+      9 : bits[4]
+      => illegal addition of nonmatching bits      
+  x <- extend (extend 5 + 9)
+      extend 5 : bits[>=3]
+      9 : bits[4]
+      => (extend 5 + 9) : bits[4]
+      => extend (extend 5 + 9) : bits[>=4]
+      => assignment forces bits[5]
+  x <- extend (extend 5 + extend 9)
+      extend 5 : bits[>=3]
+      extend 9 : bits[>=4]
+      => (extend 5 + extend 9) : bits[>=4]
+      => by minimization rule, bits[4]
+      => extend (extend + extend 9) : bits[>=4]
+      => assignment forces bits[5]
+  x <- 16 + shrink 32
+      16 : bits[5]
+      32 : bits[6]
+      => shrink 32 : bits[<=6]
+      => 16 + shrink 32 : bits[5]
+      => valid assignment
+  x <- shrink 32 + shrink 64
+      32 : bits[6]
+      64 : bits[7]
+      => shrink 32 : bits[<=6]
+      => shrink 64 : bits[<=7]
+      => shrink 32 + shrink 64 : bits[<=6]
+      => by maximization rule, bits[6]
+      => invalid assignment!
+  x <- shrink 5 + extend 64
+      5 : bits[3]
+      64 : bits[7]
+      => shrink 5 : bits[<=3]
+      => extend 64 : bits[>=7]
+      => illegal addition of nonmatching bits
+  x <- extend 5 + shrink 64
+      5 : bits[3]
+      64 : bits[7]
+      => extend 5 : bits[>=3]
+      => shrink 64 : bits[<=7]
+      => (extend 5 + shrink 64) : bits[3<=n<=7]
+      (what should `n` be? minimization or maximization rule?)
+      => thinking prefer maximization, so bits[7]
+      
+We want to think that in places where the value is not being stored (at a
+variable, which means we would know exactly the size), there is
+
+The type inference only goes one level of depth in the expression, meaning we
+need a lot of bit modifications!
+
