@@ -17,6 +17,9 @@ There is more complicated reasoning when there are multiple operators involved:
       => by minimization rule, bits[4]
       => invalid assignment!
       (the minimization rule? should be smarter than this...)
+
+      without minimization rule:
+        assignment to `x` forces type to be bits[5]
   x <- extend 5 + 9
       extend 5 : bits[>=3]
       9 : bits[4]
@@ -39,6 +42,10 @@ There is more complicated reasoning when there are multiple operators involved:
       => by minimization rule, bits[4]
       => extend (extend + extend 9) : bits[>=4]
       => assignment forces bits[5]
+      without minimization rule:
+        type of (extend 5 + extend 9) is already bits[>=4]
+        assignment to `x` forces type to be bits[5]
+        the extra extend is redundant
   x <- 16 + shrink 32
       16 : bits[5]
       32 : bits[6]
@@ -67,6 +74,8 @@ There is more complicated reasoning when there are multiple operators involved:
       => (extend 5 + shrink 64) : bits[3<=n<=7]
       (what should `n` be? minimization or maximization rule?)
       => thinking prefer maximization, so bits[7]
+      without rules:
+        this is exactly bits[5] as needed by the assignment
       
 The type inference only goes one level of depth in the expression, meaning we
 need a lot of bit modifications!
@@ -80,3 +89,20 @@ make a decision about what the type will be internally...
 
 Thinking about a maximization rule, but what about
   extend 7 < sign-extend 7  => true
+
+Should be intuitive...
+
+Conclusion: merely using `typeof` is not helpful in all cases, when there is a
+constraint that needs to be applied. in the examples above: we can define that
+the width of the type is within some interval, but constraints (like how the
+expression is used) force it to be exactly one width, and this width is what
+needs to be used exactly in the evaluation process...
+
+Constraint-based programming...
+
+
+
+
+
+Working solution for now: absolutely no type inference. You will need to
+specify all the sizes! lol

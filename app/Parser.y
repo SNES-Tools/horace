@@ -75,7 +75,6 @@ import Token
 %left and
 %left or
 %right '<-'
-%right trans shrink ext sext
 
 %%
 
@@ -87,10 +86,10 @@ expr  : int                             { ExprLit $1 }
       | idc args ')'                    { ExprCall $1 $2 }
       | id '.' idc args ')'             { ExprMethodCall $1 $3 $4 }
       | match expr with '{' cases '}'   { ExprMatch $2 $5 }
-      | trans expr                      { ExprUnOp UnOpTransmute $2 }
-      | ext expr                        { ExprUnOp UnOpExtend $2 }
-      | sext expr                       { ExprUnOp UnOpSignExtend $2 }
-      | shrink expr                     { ExprUnOp UnOpShrink $2 }
+      | trans '[' int ',' int ']' '(' expr ')'   { ExprUnOp (UnOpTransmute (Just (fromIntegral $3)) (Just (fromIntegral $5))) $8 }
+      | ext '[' int ']' '(' expr ')'    { ExprUnOp (UnOpExtend (Just (fromIntegral $3))) $6 }
+      | sext '[' int ']' '(' expr ')'   { ExprUnOp (UnOpSignExtend (Just (fromIntegral $3))) $6 }
+      | shrink '[' int ']' '(' expr ')' { ExprUnOp (UnOpShrink (Just (fromIntegral $3))) $6 }
       | expr '+' expr                   { ExprBinOp BinOpAdd $1 $3 }
       | expr '-' expr                   { ExprBinOp BinOpSub $1 $3 }
       | expr '&' expr                   { ExprBinOp BinOpBitAnd $1 $3 }
@@ -98,6 +97,7 @@ expr  : int                             { ExprLit $1 }
       | expr '|' expr                   { ExprBinOp BinOpBitOr $1 $3 }
       | id                              { ExprVar $1 }
       | '(' expr ')'                    { $2 }
+      | void                            { ExprVoid }
 
 lval : id               { LValId $1 }
      | id '[' expr ']'  { LValArrIndex $1 $3 }

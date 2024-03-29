@@ -15,10 +15,10 @@ Grammar
 	expr -> idc args ')'                               (6)
 	expr -> id '.' idc args ')'                        (7)
 	expr -> match expr with '{' cases '}'              (8)
-	expr -> trans expr                                 (9)
-	expr -> ext expr                                   (10)
-	expr -> sext expr                                  (11)
-	expr -> shrink expr                                (12)
+	expr -> trans '[' int ',' int ']' '(' expr ')'     (9)
+	expr -> ext '[' int ']' '(' expr ')'               (10)
+	expr -> sext '[' int ']' '(' expr ')'              (11)
+	expr -> shrink '[' int ']' '(' expr ')'            (12)
 	expr -> expr '+' expr                              (13)
 	expr -> expr '-' expr                              (14)
 	expr -> expr '&' expr                              (15)
@@ -26,45 +26,46 @@ Grammar
 	expr -> expr '|' expr                              (17)
 	expr -> id                                         (18)
 	expr -> '(' expr ')'                               (19)
-	lval -> id                                         (20)
-	lval -> id '[' expr ']'                            (21)
-	exprs ->                                           (22)
-	exprs -> expr exprs                                (23)
-	vars ->                                            (24)
-	vars -> var_decl vars                              (25)
-	var_decl -> var id ':' type_reg '=' expr           (26)
-	args ->                                            (27)
-	args -> expr                                       (28)
-	args -> expr ',' args                              (29)
-	cases ->                                           (30)
-	cases -> case cases                                (31)
-	case -> pat '->' expr                              (32)
-	pat -> '_'                                         (33)
-	pat -> int                                         (34)
-	pat -> id                                          (35)
-	pat -> id '(' pats ')'                             (36)
-	pats ->                                            (37)
-	pats -> pat ',' pats                               (38)
-	pred -> true                                       (39)
-	pred -> false                                      (40)
-	pred -> not pred                                   (41)
-	pred -> pred and pred                              (42)
-	pred -> pred or pred                               (43)
-	pred -> expr comp expr                             (44)
-	comp -> '='                                        (45)
-	comp -> '/='                                       (46)
-	comp -> '<'                                        (47)
-	comp -> '>'                                        (48)
-	comp -> '<='                                       (49)
-	comp -> '>='                                       (50)
-	comp -> '<$'                                       (51)
-	comp -> '>$'                                       (52)
-	comp -> '<=$'                                      (53)
-	comp -> '>=$'                                      (54)
-	type_reg -> bits '[' int ']'                       (55)
-	type_reg -> range '[' int ',' int ']'              (56)
-	type_reg -> data id                                (57)
-	type_reg -> void                                   (58)
+	expr -> void                                       (20)
+	lval -> id                                         (21)
+	lval -> id '[' expr ']'                            (22)
+	exprs ->                                           (23)
+	exprs -> expr exprs                                (24)
+	vars ->                                            (25)
+	vars -> var_decl vars                              (26)
+	var_decl -> var id ':' type_reg '=' expr           (27)
+	args ->                                            (28)
+	args -> expr                                       (29)
+	args -> expr ',' args                              (30)
+	cases ->                                           (31)
+	cases -> case cases                                (32)
+	case -> pat '->' expr                              (33)
+	pat -> '_'                                         (34)
+	pat -> int                                         (35)
+	pat -> id                                          (36)
+	pat -> id '(' pats ')'                             (37)
+	pats ->                                            (38)
+	pats -> pat ',' pats                               (39)
+	pred -> true                                       (40)
+	pred -> false                                      (41)
+	pred -> not pred                                   (42)
+	pred -> pred and pred                              (43)
+	pred -> pred or pred                               (44)
+	pred -> expr comp expr                             (45)
+	comp -> '='                                        (46)
+	comp -> '/='                                       (47)
+	comp -> '<'                                        (48)
+	comp -> '>'                                        (49)
+	comp -> '<='                                       (50)
+	comp -> '>='                                       (51)
+	comp -> '<$'                                       (52)
+	comp -> '>$'                                       (53)
+	comp -> '<=$'                                      (54)
+	comp -> '>=$'                                      (55)
+	type_reg -> bits '[' int ']'                       (56)
+	type_reg -> range '[' int ',' int ']'              (57)
+	type_reg -> data id                                (58)
+	type_reg -> void                                   (59)
 
 -----------------------------------------------------------------------------
 Terminals
@@ -126,19 +127,19 @@ Terminals
 Non-terminals
 -----------------------------------------------------------------------------
 	%start_parse    rule  0
-	expr            rules 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19
-	lval            rules 20, 21
-	exprs           rules 22, 23
-	vars            rules 24, 25
-	var_decl        rule  26
-	args            rules 27, 28, 29
-	cases           rules 30, 31
-	case            rule  32
-	pat             rules 33, 34, 35, 36
-	pats            rules 37, 38
-	pred            rules 39, 40, 41, 42, 43, 44
-	comp            rules 45, 46, 47, 48, 49, 50, 51, 52, 53, 54
-	type_reg        rules 55, 56, 57, 58
+	expr            rules 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+	lval            rules 21, 22
+	exprs           rules 23, 24
+	vars            rules 25, 26
+	var_decl        rule  27
+	args            rules 28, 29, 30
+	cases           rules 31, 32
+	case            rule  33
+	pat             rules 34, 35, 36, 37
+	pats            rules 38, 39
+	pred            rules 40, 41, 42, 43, 44, 45
+	comp            rules 46, 47, 48, 49, 50, 51, 52, 53, 54, 55
+	type_reg        rules 56, 57, 58, 59
 
 -----------------------------------------------------------------------------
 States
@@ -150,15 +151,16 @@ State 0
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
 	expr           goto state 3
 	lval           goto state 4
@@ -178,6 +180,7 @@ State 2
 	id             reduce using rule 1
 	idc            reduce using rule 1
 	var            reduce using rule 1
+	void           reduce using rule 1
 	if             reduce using rule 1
 	then           reduce using rule 1
 	else           reduce using rule 1
@@ -226,11 +229,11 @@ State 3
 	expr -> expr . '^' expr                             (rule 16)
 	expr -> expr . '|' expr                             (rule 17)
 
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
 	%eof           accept
 
 
@@ -238,20 +241,21 @@ State 4
 
 	expr -> lval . '<-' expr                            (rule 5)
 
-	'<-'           shift, and enter state 35
+	'<-'           shift, and enter state 36
 
 
 State 5
 
 	expr -> id . '.' idc args ')'                       (rule 7)
 	expr -> id .                                        (rule 18)
-	lval -> id .                                        (rule 20)
-	lval -> id . '[' expr ']'                           (rule 21)
+	lval -> id .                                        (rule 21)
+	lval -> id . '[' expr ']'                           (rule 22)
 
 	int            reduce using rule 18
 	id             reduce using rule 18
 	idc            reduce using rule 18
 	var            reduce using rule 18
+	void           reduce using rule 18
 	if             reduce using rule 18
 	then           reduce using rule 18
 	else           reduce using rule 18
@@ -277,12 +281,12 @@ State 5
 	')'            reduce using rule 18
 	'{'            reduce using rule 18
 	'}'            reduce using rule 18
-	'['            shift, and enter state 33
+	'['            shift, and enter state 34
 	']'            reduce using rule 18
 	','            reduce using rule 18
-	'.'            shift, and enter state 34
+	'.'            shift, and enter state 35
 	'_'            reduce using rule 18
-	'<-'           reduce using rule 20
+	'<-'           reduce using rule 21
 	'<'            reduce using rule 18
 	'>'            reduce using rule 18
 	'<='           reduce using rule 18
@@ -301,246 +305,249 @@ State 6
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	')'            reduce using rule 27
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	')'            reduce using rule 28
+	'{'            shift, and enter state 16
 
-	expr           goto state 31
+	expr           goto state 32
 	lval           goto state 4
-	args           goto state 32
+	args           goto state 33
 
 State 7
+
+	expr -> void .                                      (rule 20)
+
+	int            reduce using rule 20
+	id             reduce using rule 20
+	idc            reduce using rule 20
+	var            reduce using rule 20
+	void           reduce using rule 20
+	if             reduce using rule 20
+	then           reduce using rule 20
+	else           reduce using rule 20
+	for            reduce using rule 20
+	to             reduce using rule 20
+	do             reduce using rule 20
+	match          reduce using rule 20
+	with           reduce using rule 20
+	and            reduce using rule 20
+	or             reduce using rule 20
+	trans          reduce using rule 20
+	shrink         reduce using rule 20
+	ext            reduce using rule 20
+	sext           reduce using rule 20
+	'+'            reduce using rule 20
+	'-'            reduce using rule 20
+	'&'            reduce using rule 20
+	'|'            reduce using rule 20
+	'^'            reduce using rule 20
+	'='            reduce using rule 20
+	'/='           reduce using rule 20
+	'('            reduce using rule 20
+	')'            reduce using rule 20
+	'{'            reduce using rule 20
+	'}'            reduce using rule 20
+	']'            reduce using rule 20
+	','            reduce using rule 20
+	'_'            reduce using rule 20
+	'<'            reduce using rule 20
+	'>'            reduce using rule 20
+	'<='           reduce using rule 20
+	'>='           reduce using rule 20
+	'<$'           reduce using rule 20
+	'<=$'          reduce using rule 20
+	'>$'           reduce using rule 20
+	'>=$'          reduce using rule 20
+	%eof           reduce using rule 20
+
+
+State 8
 
 	expr -> if . pred then expr else expr               (rule 3)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	true           shift, and enter state 28
-	false          shift, and enter state 29
-	not            shift, and enter state 30
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	true           shift, and enter state 29
+	false          shift, and enter state 30
+	not            shift, and enter state 31
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 26
+	expr           goto state 27
 	lval           goto state 4
-	pred           goto state 27
+	pred           goto state 28
 
-State 8
+State 9
 
 	expr -> for . id '=' expr to expr do expr           (rule 4)
 
-	id             shift, and enter state 25
+	id             shift, and enter state 26
 
 
-State 9
+State 10
 
 	expr -> match . expr with '{' cases '}'             (rule 8)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 24
-	lval           goto state 4
-
-State 10
-
-	expr -> trans . expr                                (rule 9)
-
-	int            shift, and enter state 2
-	id             shift, and enter state 5
-	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
-
-	expr           goto state 23
+	expr           goto state 25
 	lval           goto state 4
 
 State 11
 
-	expr -> shrink . expr                               (rule 12)
+	expr -> trans . '[' int ',' int ']' '(' expr ')'    (rule 9)
 
-	int            shift, and enter state 2
-	id             shift, and enter state 5
-	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	'['            shift, and enter state 24
 
-	expr           goto state 22
-	lval           goto state 4
 
 State 12
 
-	expr -> ext . expr                                  (rule 10)
+	expr -> shrink . '[' int ']' '(' expr ')'           (rule 12)
 
-	int            shift, and enter state 2
-	id             shift, and enter state 5
-	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	'['            shift, and enter state 23
 
-	expr           goto state 21
-	lval           goto state 4
 
 State 13
 
-	expr -> sext . expr                                 (rule 11)
+	expr -> ext . '[' int ']' '(' expr ')'              (rule 10)
 
-	int            shift, and enter state 2
-	id             shift, and enter state 5
-	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	'['            shift, and enter state 22
 
-	expr           goto state 20
-	lval           goto state 4
 
 State 14
+
+	expr -> sext . '[' int ']' '(' expr ')'             (rule 11)
+
+	'['            shift, and enter state 21
+
+
+State 15
 
 	expr -> '(' . expr ')'                              (rule 19)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 19
+	expr           goto state 20
 	lval           goto state 4
 
-State 15
+State 16
 
 	expr -> '{' . vars exprs '}'                        (rule 2)
 
-	int            reduce using rule 24
-	id             reduce using rule 24
-	idc            reduce using rule 24
-	var            shift, and enter state 18
-	if             reduce using rule 24
-	for            reduce using rule 24
-	match          reduce using rule 24
-	trans          reduce using rule 24
-	shrink         reduce using rule 24
-	ext            reduce using rule 24
-	sext           reduce using rule 24
-	'('            reduce using rule 24
-	'{'            reduce using rule 24
-	'}'            reduce using rule 24
+	int            reduce using rule 25
+	id             reduce using rule 25
+	idc            reduce using rule 25
+	var            shift, and enter state 19
+	void           reduce using rule 25
+	if             reduce using rule 25
+	for            reduce using rule 25
+	match          reduce using rule 25
+	trans          reduce using rule 25
+	shrink         reduce using rule 25
+	ext            reduce using rule 25
+	sext           reduce using rule 25
+	'('            reduce using rule 25
+	'{'            reduce using rule 25
+	'}'            reduce using rule 25
 
-	vars           goto state 16
-	var_decl       goto state 17
+	vars           goto state 17
+	var_decl       goto state 18
 
-State 16
+State 17
 
 	expr -> '{' vars . exprs '}'                        (rule 2)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
-	'}'            reduce using rule 22
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
+	'}'            reduce using rule 23
 
-	expr           goto state 71
+	expr           goto state 76
 	lval           goto state 4
-	exprs          goto state 72
-
-State 17
-
-	vars -> var_decl . vars                             (rule 25)
-
-	int            reduce using rule 24
-	id             reduce using rule 24
-	idc            reduce using rule 24
-	var            shift, and enter state 18
-	if             reduce using rule 24
-	for            reduce using rule 24
-	match          reduce using rule 24
-	trans          reduce using rule 24
-	shrink         reduce using rule 24
-	ext            reduce using rule 24
-	sext           reduce using rule 24
-	'('            reduce using rule 24
-	'{'            reduce using rule 24
-	'}'            reduce using rule 24
-
-	vars           goto state 70
-	var_decl       goto state 17
+	exprs          goto state 77
 
 State 18
 
-	var_decl -> var . id ':' type_reg '=' expr          (rule 26)
+	vars -> var_decl . vars                             (rule 26)
 
-	id             shift, and enter state 69
+	int            reduce using rule 25
+	id             reduce using rule 25
+	idc            reduce using rule 25
+	var            shift, and enter state 19
+	void           reduce using rule 25
+	if             reduce using rule 25
+	for            reduce using rule 25
+	match          reduce using rule 25
+	trans          reduce using rule 25
+	shrink         reduce using rule 25
+	ext            reduce using rule 25
+	sext           reduce using rule 25
+	'('            reduce using rule 25
+	'{'            reduce using rule 25
+	'}'            reduce using rule 25
 
+	vars           goto state 75
+	var_decl       goto state 18
 
 State 19
+
+	var_decl -> var . id ':' type_reg '=' expr          (rule 27)
+
+	id             shift, and enter state 74
+
+
+State 20
 
 	expr -> expr . '+' expr                             (rule 13)
 	expr -> expr . '-' expr                             (rule 14)
@@ -549,223 +556,43 @@ State 19
 	expr -> expr . '|' expr                             (rule 17)
 	expr -> '(' expr . ')'                              (rule 19)
 
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
-	')'            shift, and enter state 68
-
-
-State 20
-
-	expr -> sext expr .                                 (rule 11)
-	expr -> expr . '+' expr                             (rule 13)
-	expr -> expr . '-' expr                             (rule 14)
-	expr -> expr . '&' expr                             (rule 15)
-	expr -> expr . '^' expr                             (rule 16)
-	expr -> expr . '|' expr                             (rule 17)
-
-	int            reduce using rule 11
-	id             reduce using rule 11
-	idc            reduce using rule 11
-	var            reduce using rule 11
-	if             reduce using rule 11
-	then           reduce using rule 11
-	else           reduce using rule 11
-	for            reduce using rule 11
-	to             reduce using rule 11
-	do             reduce using rule 11
-	match          reduce using rule 11
-	with           reduce using rule 11
-	and            reduce using rule 11
-	or             reduce using rule 11
-	trans          reduce using rule 11
-	shrink         reduce using rule 11
-	ext            reduce using rule 11
-	sext           reduce using rule 11
-	'+'            reduce using rule 11
-	'-'            reduce using rule 11
-	'&'            reduce using rule 11
-	'|'            reduce using rule 11
-	'^'            reduce using rule 11
-	'='            reduce using rule 11
-	'/='           reduce using rule 11
-	'('            reduce using rule 11
-	')'            reduce using rule 11
-	'{'            reduce using rule 11
-	'}'            reduce using rule 11
-	']'            reduce using rule 11
-	','            reduce using rule 11
-	'_'            reduce using rule 11
-	'<'            reduce using rule 11
-	'>'            reduce using rule 11
-	'<='           reduce using rule 11
-	'>='           reduce using rule 11
-	'<$'           reduce using rule 11
-	'<=$'          reduce using rule 11
-	'>$'           reduce using rule 11
-	'>=$'          reduce using rule 11
-	%eof           reduce using rule 11
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
+	')'            shift, and enter state 73
 
 
 State 21
 
-	expr -> ext expr .                                  (rule 10)
-	expr -> expr . '+' expr                             (rule 13)
-	expr -> expr . '-' expr                             (rule 14)
-	expr -> expr . '&' expr                             (rule 15)
-	expr -> expr . '^' expr                             (rule 16)
-	expr -> expr . '|' expr                             (rule 17)
+	expr -> sext '[' . int ']' '(' expr ')'             (rule 11)
 
-	int            reduce using rule 10
-	id             reduce using rule 10
-	idc            reduce using rule 10
-	var            reduce using rule 10
-	if             reduce using rule 10
-	then           reduce using rule 10
-	else           reduce using rule 10
-	for            reduce using rule 10
-	to             reduce using rule 10
-	do             reduce using rule 10
-	match          reduce using rule 10
-	with           reduce using rule 10
-	and            reduce using rule 10
-	or             reduce using rule 10
-	trans          reduce using rule 10
-	shrink         reduce using rule 10
-	ext            reduce using rule 10
-	sext           reduce using rule 10
-	'+'            reduce using rule 10
-	'-'            reduce using rule 10
-	'&'            reduce using rule 10
-	'|'            reduce using rule 10
-	'^'            reduce using rule 10
-	'='            reduce using rule 10
-	'/='           reduce using rule 10
-	'('            reduce using rule 10
-	')'            reduce using rule 10
-	'{'            reduce using rule 10
-	'}'            reduce using rule 10
-	']'            reduce using rule 10
-	','            reduce using rule 10
-	'_'            reduce using rule 10
-	'<'            reduce using rule 10
-	'>'            reduce using rule 10
-	'<='           reduce using rule 10
-	'>='           reduce using rule 10
-	'<$'           reduce using rule 10
-	'<=$'          reduce using rule 10
-	'>$'           reduce using rule 10
-	'>=$'          reduce using rule 10
-	%eof           reduce using rule 10
+	int            shift, and enter state 72
 
 
 State 22
 
-	expr -> shrink expr .                               (rule 12)
-	expr -> expr . '+' expr                             (rule 13)
-	expr -> expr . '-' expr                             (rule 14)
-	expr -> expr . '&' expr                             (rule 15)
-	expr -> expr . '^' expr                             (rule 16)
-	expr -> expr . '|' expr                             (rule 17)
+	expr -> ext '[' . int ']' '(' expr ')'              (rule 10)
 
-	int            reduce using rule 12
-	id             reduce using rule 12
-	idc            reduce using rule 12
-	var            reduce using rule 12
-	if             reduce using rule 12
-	then           reduce using rule 12
-	else           reduce using rule 12
-	for            reduce using rule 12
-	to             reduce using rule 12
-	do             reduce using rule 12
-	match          reduce using rule 12
-	with           reduce using rule 12
-	and            reduce using rule 12
-	or             reduce using rule 12
-	trans          reduce using rule 12
-	shrink         reduce using rule 12
-	ext            reduce using rule 12
-	sext           reduce using rule 12
-	'+'            reduce using rule 12
-	'-'            reduce using rule 12
-	'&'            reduce using rule 12
-	'|'            reduce using rule 12
-	'^'            reduce using rule 12
-	'='            reduce using rule 12
-	'/='           reduce using rule 12
-	'('            reduce using rule 12
-	')'            reduce using rule 12
-	'{'            reduce using rule 12
-	'}'            reduce using rule 12
-	']'            reduce using rule 12
-	','            reduce using rule 12
-	'_'            reduce using rule 12
-	'<'            reduce using rule 12
-	'>'            reduce using rule 12
-	'<='           reduce using rule 12
-	'>='           reduce using rule 12
-	'<$'           reduce using rule 12
-	'<=$'          reduce using rule 12
-	'>$'           reduce using rule 12
-	'>=$'          reduce using rule 12
-	%eof           reduce using rule 12
+	int            shift, and enter state 71
 
 
 State 23
 
-	expr -> trans expr .                                (rule 9)
-	expr -> expr . '+' expr                             (rule 13)
-	expr -> expr . '-' expr                             (rule 14)
-	expr -> expr . '&' expr                             (rule 15)
-	expr -> expr . '^' expr                             (rule 16)
-	expr -> expr . '|' expr                             (rule 17)
+	expr -> shrink '[' . int ']' '(' expr ')'           (rule 12)
 
-	int            reduce using rule 9
-	id             reduce using rule 9
-	idc            reduce using rule 9
-	var            reduce using rule 9
-	if             reduce using rule 9
-	then           reduce using rule 9
-	else           reduce using rule 9
-	for            reduce using rule 9
-	to             reduce using rule 9
-	do             reduce using rule 9
-	match          reduce using rule 9
-	with           reduce using rule 9
-	and            reduce using rule 9
-	or             reduce using rule 9
-	trans          reduce using rule 9
-	shrink         reduce using rule 9
-	ext            reduce using rule 9
-	sext           reduce using rule 9
-	'+'            reduce using rule 9
-	'-'            reduce using rule 9
-	'&'            reduce using rule 9
-	'|'            reduce using rule 9
-	'^'            reduce using rule 9
-	'='            reduce using rule 9
-	'/='           reduce using rule 9
-	'('            reduce using rule 9
-	')'            reduce using rule 9
-	'{'            reduce using rule 9
-	'}'            reduce using rule 9
-	']'            reduce using rule 9
-	','            reduce using rule 9
-	'_'            reduce using rule 9
-	'<'            reduce using rule 9
-	'>'            reduce using rule 9
-	'<='           reduce using rule 9
-	'>='           reduce using rule 9
-	'<$'           reduce using rule 9
-	'<=$'          reduce using rule 9
-	'>$'           reduce using rule 9
-	'>=$'          reduce using rule 9
-	%eof           reduce using rule 9
+	int            shift, and enter state 70
 
 
 State 24
+
+	expr -> trans '[' . int ',' int ']' '(' expr ')'    (rule 9)
+
+	int            shift, and enter state 69
+
+
+State 25
 
 	expr -> match expr . with '{' cases '}'             (rule 8)
 	expr -> expr . '+' expr                             (rule 13)
@@ -774,71 +601,62 @@ State 24
 	expr -> expr . '^' expr                             (rule 16)
 	expr -> expr . '|' expr                             (rule 17)
 
-	with           shift, and enter state 67
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
-
-
-State 25
-
-	expr -> for id . '=' expr to expr do expr           (rule 4)
-
-	'='            shift, and enter state 66
+	with           shift, and enter state 68
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
 
 
 State 26
+
+	expr -> for id . '=' expr to expr do expr           (rule 4)
+
+	'='            shift, and enter state 67
+
+
+State 27
 
 	expr -> expr . '+' expr                             (rule 13)
 	expr -> expr . '-' expr                             (rule 14)
 	expr -> expr . '&' expr                             (rule 15)
 	expr -> expr . '^' expr                             (rule 16)
 	expr -> expr . '|' expr                             (rule 17)
-	pred -> expr . comp expr                            (rule 44)
+	pred -> expr . comp expr                            (rule 45)
 
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
-	'='            shift, and enter state 56
-	'/='           shift, and enter state 57
-	'<'            shift, and enter state 58
-	'>'            shift, and enter state 59
-	'<='           shift, and enter state 60
-	'>='           shift, and enter state 61
-	'<$'           shift, and enter state 62
-	'<=$'          shift, and enter state 63
-	'>$'           shift, and enter state 64
-	'>=$'          shift, and enter state 65
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
+	'='            shift, and enter state 57
+	'/='           shift, and enter state 58
+	'<'            shift, and enter state 59
+	'>'            shift, and enter state 60
+	'<='           shift, and enter state 61
+	'>='           shift, and enter state 62
+	'<$'           shift, and enter state 63
+	'<=$'          shift, and enter state 64
+	'>$'           shift, and enter state 65
+	'>=$'          shift, and enter state 66
 
-	comp           goto state 55
-
-State 27
-
-	expr -> if pred . then expr else expr               (rule 3)
-	pred -> pred . and pred                             (rule 42)
-	pred -> pred . or pred                              (rule 43)
-
-	then           shift, and enter state 52
-	and            shift, and enter state 53
-	or             shift, and enter state 54
-
+	comp           goto state 56
 
 State 28
 
-	pred -> true .                                      (rule 39)
+	expr -> if pred . then expr else expr               (rule 3)
+	pred -> pred . and pred                             (rule 43)
+	pred -> pred . or pred                              (rule 44)
 
-	then           reduce using rule 39
-	and            reduce using rule 39
-	or             reduce using rule 39
+	then           shift, and enter state 53
+	and            shift, and enter state 54
+	or             shift, and enter state 55
 
 
 State 29
 
-	pred -> false .                                     (rule 40)
+	pred -> true .                                      (rule 40)
 
 	then           reduce using rule 40
 	and            reduce using rule 40
@@ -847,202 +665,219 @@ State 29
 
 State 30
 
-	pred -> not . pred                                  (rule 41)
+	pred -> false .                                     (rule 41)
+
+	then           reduce using rule 41
+	and            reduce using rule 41
+	or             reduce using rule 41
+
+
+State 31
+
+	pred -> not . pred                                  (rule 42)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	true           shift, and enter state 28
-	false          shift, and enter state 29
-	not            shift, and enter state 30
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	true           shift, and enter state 29
+	false          shift, and enter state 30
+	not            shift, and enter state 31
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 26
+	expr           goto state 27
 	lval           goto state 4
-	pred           goto state 51
+	pred           goto state 52
 
-State 31
+State 32
 
 	expr -> expr . '+' expr                             (rule 13)
 	expr -> expr . '-' expr                             (rule 14)
 	expr -> expr . '&' expr                             (rule 15)
 	expr -> expr . '^' expr                             (rule 16)
 	expr -> expr . '|' expr                             (rule 17)
-	args -> expr .                                      (rule 28)
-	args -> expr . ',' args                             (rule 29)
+	args -> expr .                                      (rule 29)
+	args -> expr . ',' args                             (rule 30)
 
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
-	')'            reduce using rule 28
-	','            shift, and enter state 50
-
-
-State 32
-
-	expr -> idc args . ')'                              (rule 6)
-
-	')'            shift, and enter state 49
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
+	')'            reduce using rule 29
+	','            shift, and enter state 51
 
 
 State 33
 
-	lval -> id '[' . expr ']'                           (rule 21)
+	expr -> idc args . ')'                              (rule 6)
+
+	')'            shift, and enter state 50
+
+
+State 34
+
+	lval -> id '[' . expr ']'                           (rule 22)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 48
+	expr           goto state 49
 	lval           goto state 4
 
-State 34
+State 35
 
 	expr -> id '.' . idc args ')'                       (rule 7)
 
-	idc            shift, and enter state 47
+	idc            shift, and enter state 48
 
 
-State 35
+State 36
 
 	expr -> lval '<-' . expr                            (rule 5)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 46
+	expr           goto state 47
 	lval           goto state 4
 
-State 36
+State 37
 
 	expr -> expr '+' . expr                             (rule 13)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 45
+	expr           goto state 46
 	lval           goto state 4
 
-State 37
+State 38
 
 	expr -> expr '-' . expr                             (rule 14)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 44
+	expr           goto state 45
 	lval           goto state 4
 
-State 38
+State 39
 
 	expr -> expr '&' . expr                             (rule 15)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 43
+	expr           goto state 44
 	lval           goto state 4
 
-State 39
+State 40
 
 	expr -> expr '|' . expr                             (rule 17)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 42
+	expr           goto state 43
 	lval           goto state 4
 
-State 40
+State 41
 
 	expr -> expr '^' . expr                             (rule 16)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 41
+	expr           goto state 42
 	lval           goto state 4
 
-State 41
+State 42
 
 	expr -> expr . '+' expr                             (rule 13)
 	expr -> expr . '-' expr                             (rule 14)
@@ -1055,6 +890,7 @@ State 41
 	id             reduce using rule 16
 	idc            reduce using rule 16
 	var            reduce using rule 16
+	void           reduce using rule 16
 	if             reduce using rule 16
 	then           reduce using rule 16
 	else           reduce using rule 16
@@ -1072,7 +908,7 @@ State 41
 	'+'            reduce using rule 16
 	'-'            reduce using rule 16
 	'&'            reduce using rule 16
-	'|'            shift, and enter state 39
+	'|'            shift, and enter state 40
 	'^'            reduce using rule 16
 	'='            reduce using rule 16
 	'/='           reduce using rule 16
@@ -1094,7 +930,7 @@ State 41
 	%eof           reduce using rule 16
 
 
-State 42
+State 43
 
 	expr -> expr . '+' expr                             (rule 13)
 	expr -> expr . '-' expr                             (rule 14)
@@ -1107,6 +943,7 @@ State 42
 	id             reduce using rule 17
 	idc            reduce using rule 17
 	var            reduce using rule 17
+	void           reduce using rule 17
 	if             reduce using rule 17
 	then           reduce using rule 17
 	else           reduce using rule 17
@@ -1146,7 +983,7 @@ State 42
 	%eof           reduce using rule 17
 
 
-State 43
+State 44
 
 	expr -> expr . '+' expr                             (rule 13)
 	expr -> expr . '-' expr                             (rule 14)
@@ -1159,6 +996,7 @@ State 43
 	id             reduce using rule 15
 	idc            reduce using rule 15
 	var            reduce using rule 15
+	void           reduce using rule 15
 	if             reduce using rule 15
 	then           reduce using rule 15
 	else           reduce using rule 15
@@ -1176,8 +1014,8 @@ State 43
 	'+'            reduce using rule 15
 	'-'            reduce using rule 15
 	'&'            reduce using rule 15
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
 	'='            reduce using rule 15
 	'/='           reduce using rule 15
 	'('            reduce using rule 15
@@ -1198,7 +1036,7 @@ State 43
 	%eof           reduce using rule 15
 
 
-State 44
+State 45
 
 	expr -> expr . '+' expr                             (rule 13)
 	expr -> expr . '-' expr                             (rule 14)
@@ -1211,6 +1049,7 @@ State 44
 	id             reduce using rule 14
 	idc            reduce using rule 14
 	var            reduce using rule 14
+	void           reduce using rule 14
 	if             reduce using rule 14
 	then           reduce using rule 14
 	else           reduce using rule 14
@@ -1227,9 +1066,9 @@ State 44
 	sext           reduce using rule 14
 	'+'            reduce using rule 14
 	'-'            reduce using rule 14
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
 	'='            reduce using rule 14
 	'/='           reduce using rule 14
 	'('            reduce using rule 14
@@ -1250,7 +1089,7 @@ State 44
 	%eof           reduce using rule 14
 
 
-State 45
+State 46
 
 	expr -> expr . '+' expr                             (rule 13)
 	expr -> expr '+' expr .                             (rule 13)
@@ -1263,6 +1102,7 @@ State 45
 	id             reduce using rule 13
 	idc            reduce using rule 13
 	var            reduce using rule 13
+	void           reduce using rule 13
 	if             reduce using rule 13
 	then           reduce using rule 13
 	else           reduce using rule 13
@@ -1279,9 +1119,9 @@ State 45
 	sext           reduce using rule 13
 	'+'            reduce using rule 13
 	'-'            reduce using rule 13
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
 	'='            reduce using rule 13
 	'/='           reduce using rule 13
 	'('            reduce using rule 13
@@ -1302,7 +1142,7 @@ State 45
 	%eof           reduce using rule 13
 
 
-State 46
+State 47
 
 	expr -> lval '<-' expr .                            (rule 5)
 	expr -> expr . '+' expr                             (rule 13)
@@ -1315,6 +1155,7 @@ State 46
 	id             reduce using rule 5
 	idc            reduce using rule 5
 	var            reduce using rule 5
+	void           reduce using rule 5
 	if             reduce using rule 5
 	then           reduce using rule 5
 	else           reduce using rule 5
@@ -1354,46 +1195,47 @@ State 46
 	%eof           reduce using rule 5
 
 
-State 47
+State 48
 
 	expr -> id '.' idc . args ')'                       (rule 7)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	')'            reduce using rule 27
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	')'            reduce using rule 28
+	'{'            shift, and enter state 16
 
-	expr           goto state 31
+	expr           goto state 32
 	lval           goto state 4
-	args           goto state 84
+	args           goto state 93
 
-State 48
+State 49
 
 	expr -> expr . '+' expr                             (rule 13)
 	expr -> expr . '-' expr                             (rule 14)
 	expr -> expr . '&' expr                             (rule 15)
 	expr -> expr . '^' expr                             (rule 16)
 	expr -> expr . '|' expr                             (rule 17)
-	lval -> id '[' expr . ']'                           (rule 21)
+	lval -> id '[' expr . ']'                           (rule 22)
 
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
-	']'            shift, and enter state 83
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
+	']'            shift, and enter state 92
 
 
-State 49
+State 50
 
 	expr -> idc args ')' .                              (rule 6)
 
@@ -1401,6 +1243,7 @@ State 49
 	id             reduce using rule 6
 	idc            reduce using rule 6
 	var            reduce using rule 6
+	void           reduce using rule 6
 	if             reduce using rule 6
 	then           reduce using rule 6
 	else           reduce using rule 6
@@ -1440,152 +1283,140 @@ State 49
 	%eof           reduce using rule 6
 
 
-State 50
+State 51
 
-	args -> expr ',' . args                             (rule 29)
+	args -> expr ',' . args                             (rule 30)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	')'            reduce using rule 27
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	')'            reduce using rule 28
+	'{'            shift, and enter state 16
 
-	expr           goto state 31
+	expr           goto state 32
 	lval           goto state 4
-	args           goto state 82
-
-State 51
-
-	pred -> not pred .                                  (rule 41)
-	pred -> pred . and pred                             (rule 42)
-	pred -> pred . or pred                              (rule 43)
-
-	then           reduce using rule 41
-	and            shift, and enter state 53
-	or             shift, and enter state 54
-
+	args           goto state 91
 
 State 52
+
+	pred -> not pred .                                  (rule 42)
+	pred -> pred . and pred                             (rule 43)
+	pred -> pred . or pred                              (rule 44)
+
+	then           reduce using rule 42
+	and            shift, and enter state 54
+	or             shift, and enter state 55
+
+
+State 53
 
 	expr -> if pred then . expr else expr               (rule 3)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 81
+	expr           goto state 90
 	lval           goto state 4
-
-State 53
-
-	pred -> pred and . pred                             (rule 42)
-
-	int            shift, and enter state 2
-	id             shift, and enter state 5
-	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	true           shift, and enter state 28
-	false          shift, and enter state 29
-	not            shift, and enter state 30
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
-
-	expr           goto state 26
-	lval           goto state 4
-	pred           goto state 80
 
 State 54
 
-	pred -> pred or . pred                              (rule 43)
+	pred -> pred and . pred                             (rule 43)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	true           shift, and enter state 28
-	false          shift, and enter state 29
-	not            shift, and enter state 30
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	true           shift, and enter state 29
+	false          shift, and enter state 30
+	not            shift, and enter state 31
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 26
+	expr           goto state 27
 	lval           goto state 4
-	pred           goto state 79
+	pred           goto state 89
 
 State 55
 
-	pred -> expr comp . expr                            (rule 44)
+	pred -> pred or . pred                              (rule 44)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	true           shift, and enter state 29
+	false          shift, and enter state 30
+	not            shift, and enter state 31
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 78
+	expr           goto state 27
 	lval           goto state 4
+	pred           goto state 88
 
 State 56
 
-	comp -> '=' .                                       (rule 45)
+	pred -> expr comp . expr                            (rule 45)
 
-	int            reduce using rule 45
-	id             reduce using rule 45
-	idc            reduce using rule 45
-	if             reduce using rule 45
-	for            reduce using rule 45
-	match          reduce using rule 45
-	trans          reduce using rule 45
-	shrink         reduce using rule 45
-	ext            reduce using rule 45
-	sext           reduce using rule 45
-	'('            reduce using rule 45
-	'{'            reduce using rule 45
+	int            shift, and enter state 2
+	id             shift, and enter state 5
+	idc            shift, and enter state 6
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
+	expr           goto state 87
+	lval           goto state 4
 
 State 57
 
-	comp -> '/=' .                                      (rule 46)
+	comp -> '=' .                                       (rule 46)
 
 	int            reduce using rule 46
 	id             reduce using rule 46
 	idc            reduce using rule 46
+	void           reduce using rule 46
 	if             reduce using rule 46
 	for            reduce using rule 46
 	match          reduce using rule 46
@@ -1599,11 +1430,12 @@ State 57
 
 State 58
 
-	comp -> '<' .                                       (rule 47)
+	comp -> '/=' .                                      (rule 47)
 
 	int            reduce using rule 47
 	id             reduce using rule 47
 	idc            reduce using rule 47
+	void           reduce using rule 47
 	if             reduce using rule 47
 	for            reduce using rule 47
 	match          reduce using rule 47
@@ -1617,11 +1449,12 @@ State 58
 
 State 59
 
-	comp -> '>' .                                       (rule 48)
+	comp -> '<' .                                       (rule 48)
 
 	int            reduce using rule 48
 	id             reduce using rule 48
 	idc            reduce using rule 48
+	void           reduce using rule 48
 	if             reduce using rule 48
 	for            reduce using rule 48
 	match          reduce using rule 48
@@ -1635,11 +1468,12 @@ State 59
 
 State 60
 
-	comp -> '<=' .                                      (rule 49)
+	comp -> '>' .                                       (rule 49)
 
 	int            reduce using rule 49
 	id             reduce using rule 49
 	idc            reduce using rule 49
+	void           reduce using rule 49
 	if             reduce using rule 49
 	for            reduce using rule 49
 	match          reduce using rule 49
@@ -1653,11 +1487,12 @@ State 60
 
 State 61
 
-	comp -> '>=' .                                      (rule 50)
+	comp -> '<=' .                                      (rule 50)
 
 	int            reduce using rule 50
 	id             reduce using rule 50
 	idc            reduce using rule 50
+	void           reduce using rule 50
 	if             reduce using rule 50
 	for            reduce using rule 50
 	match          reduce using rule 50
@@ -1671,11 +1506,12 @@ State 61
 
 State 62
 
-	comp -> '<$' .                                      (rule 51)
+	comp -> '>=' .                                      (rule 51)
 
 	int            reduce using rule 51
 	id             reduce using rule 51
 	idc            reduce using rule 51
+	void           reduce using rule 51
 	if             reduce using rule 51
 	for            reduce using rule 51
 	match          reduce using rule 51
@@ -1689,29 +1525,12 @@ State 62
 
 State 63
 
-	comp -> '<=$' .                                     (rule 53)
-
-	int            reduce using rule 53
-	id             reduce using rule 53
-	idc            reduce using rule 53
-	if             reduce using rule 53
-	for            reduce using rule 53
-	match          reduce using rule 53
-	trans          reduce using rule 53
-	shrink         reduce using rule 53
-	ext            reduce using rule 53
-	sext           reduce using rule 53
-	'('            reduce using rule 53
-	'{'            reduce using rule 53
-
-
-State 64
-
-	comp -> '>$' .                                      (rule 52)
+	comp -> '<$' .                                      (rule 52)
 
 	int            reduce using rule 52
 	id             reduce using rule 52
 	idc            reduce using rule 52
+	void           reduce using rule 52
 	if             reduce using rule 52
 	for            reduce using rule 52
 	match          reduce using rule 52
@@ -1723,13 +1542,14 @@ State 64
 	'{'            reduce using rule 52
 
 
-State 65
+State 64
 
-	comp -> '>=$' .                                     (rule 54)
+	comp -> '<=$' .                                     (rule 54)
 
 	int            reduce using rule 54
 	id             reduce using rule 54
 	idc            reduce using rule 54
+	void           reduce using rule 54
 	if             reduce using rule 54
 	for            reduce using rule 54
 	match          reduce using rule 54
@@ -1741,34 +1561,101 @@ State 65
 	'{'            reduce using rule 54
 
 
+State 65
+
+	comp -> '>$' .                                      (rule 53)
+
+	int            reduce using rule 53
+	id             reduce using rule 53
+	idc            reduce using rule 53
+	void           reduce using rule 53
+	if             reduce using rule 53
+	for            reduce using rule 53
+	match          reduce using rule 53
+	trans          reduce using rule 53
+	shrink         reduce using rule 53
+	ext            reduce using rule 53
+	sext           reduce using rule 53
+	'('            reduce using rule 53
+	'{'            reduce using rule 53
+
+
 State 66
+
+	comp -> '>=$' .                                     (rule 55)
+
+	int            reduce using rule 55
+	id             reduce using rule 55
+	idc            reduce using rule 55
+	void           reduce using rule 55
+	if             reduce using rule 55
+	for            reduce using rule 55
+	match          reduce using rule 55
+	trans          reduce using rule 55
+	shrink         reduce using rule 55
+	ext            reduce using rule 55
+	sext           reduce using rule 55
+	'('            reduce using rule 55
+	'{'            reduce using rule 55
+
+
+State 67
 
 	expr -> for id '=' . expr to expr do expr           (rule 4)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 77
+	expr           goto state 86
 	lval           goto state 4
 
-State 67
+State 68
 
 	expr -> match expr with . '{' cases '}'             (rule 8)
 
-	'{'            shift, and enter state 76
+	'{'            shift, and enter state 85
 
 
-State 68
+State 69
+
+	expr -> trans '[' int . ',' int ']' '(' expr ')'    (rule 9)
+
+	','            shift, and enter state 84
+
+
+State 70
+
+	expr -> shrink '[' int . ']' '(' expr ')'           (rule 12)
+
+	']'            shift, and enter state 83
+
+
+State 71
+
+	expr -> ext '[' int . ']' '(' expr ')'              (rule 10)
+
+	']'            shift, and enter state 82
+
+
+State 72
+
+	expr -> sext '[' int . ']' '(' expr ')'             (rule 11)
+
+	']'            shift, and enter state 81
+
+
+State 73
 
 	expr -> '(' expr ')' .                              (rule 19)
 
@@ -1776,6 +1663,7 @@ State 68
 	id             reduce using rule 19
 	idc            reduce using rule 19
 	var            reduce using rule 19
+	void           reduce using rule 19
 	if             reduce using rule 19
 	then           reduce using rule 19
 	else           reduce using rule 19
@@ -1815,72 +1703,74 @@ State 68
 	%eof           reduce using rule 19
 
 
-State 69
+State 74
 
-	var_decl -> var id . ':' type_reg '=' expr          (rule 26)
+	var_decl -> var id . ':' type_reg '=' expr          (rule 27)
 
-	':'            shift, and enter state 75
-
-
-State 70
-
-	vars -> var_decl vars .                             (rule 25)
-
-	int            reduce using rule 25
-	id             reduce using rule 25
-	idc            reduce using rule 25
-	if             reduce using rule 25
-	for            reduce using rule 25
-	match          reduce using rule 25
-	trans          reduce using rule 25
-	shrink         reduce using rule 25
-	ext            reduce using rule 25
-	sext           reduce using rule 25
-	'('            reduce using rule 25
-	'{'            reduce using rule 25
-	'}'            reduce using rule 25
+	':'            shift, and enter state 80
 
 
-State 71
+State 75
+
+	vars -> var_decl vars .                             (rule 26)
+
+	int            reduce using rule 26
+	id             reduce using rule 26
+	idc            reduce using rule 26
+	void           reduce using rule 26
+	if             reduce using rule 26
+	for            reduce using rule 26
+	match          reduce using rule 26
+	trans          reduce using rule 26
+	shrink         reduce using rule 26
+	ext            reduce using rule 26
+	sext           reduce using rule 26
+	'('            reduce using rule 26
+	'{'            reduce using rule 26
+	'}'            reduce using rule 26
+
+
+State 76
 
 	expr -> expr . '+' expr                             (rule 13)
 	expr -> expr . '-' expr                             (rule 14)
 	expr -> expr . '&' expr                             (rule 15)
 	expr -> expr . '^' expr                             (rule 16)
 	expr -> expr . '|' expr                             (rule 17)
-	exprs -> expr . exprs                               (rule 23)
+	exprs -> expr . exprs                               (rule 24)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
-	'}'            reduce using rule 22
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
+	'}'            reduce using rule 23
 
-	expr           goto state 71
+	expr           goto state 76
 	lval           goto state 4
-	exprs          goto state 74
+	exprs          goto state 79
 
-State 72
+State 77
 
 	expr -> '{' vars exprs . '}'                        (rule 2)
 
-	'}'            shift, and enter state 73
+	'}'            shift, and enter state 78
 
 
-State 73
+State 78
 
 	expr -> '{' vars exprs '}' .                        (rule 2)
 
@@ -1888,6 +1778,7 @@ State 73
 	id             reduce using rule 2
 	idc            reduce using rule 2
 	var            reduce using rule 2
+	void           reduce using rule 2
 	if             reduce using rule 2
 	then           reduce using rule 2
 	else           reduce using rule 2
@@ -1927,38 +1818,66 @@ State 73
 	%eof           reduce using rule 2
 
 
-State 74
+State 79
 
-	exprs -> expr exprs .                               (rule 23)
+	exprs -> expr exprs .                               (rule 24)
 
-	'}'            reduce using rule 23
+	'}'            reduce using rule 24
 
 
-State 75
+State 80
 
-	var_decl -> var id ':' . type_reg '=' expr          (rule 26)
+	var_decl -> var id ':' . type_reg '=' expr          (rule 27)
 
-	bits           shift, and enter state 95
-	range          shift, and enter state 96
-	data           shift, and enter state 97
-	void           shift, and enter state 98
+	bits           shift, and enter state 108
+	range          shift, and enter state 109
+	data           shift, and enter state 110
+	void           shift, and enter state 111
 
-	type_reg       goto state 94
+	type_reg       goto state 107
 
-State 76
+State 81
+
+	expr -> sext '[' int ']' . '(' expr ')'             (rule 11)
+
+	'('            shift, and enter state 106
+
+
+State 82
+
+	expr -> ext '[' int ']' . '(' expr ')'              (rule 10)
+
+	'('            shift, and enter state 105
+
+
+State 83
+
+	expr -> shrink '[' int ']' . '(' expr ')'           (rule 12)
+
+	'('            shift, and enter state 104
+
+
+State 84
+
+	expr -> trans '[' int ',' . int ']' '(' expr ')'    (rule 9)
+
+	int            shift, and enter state 103
+
+
+State 85
 
 	expr -> match expr with '{' . cases '}'             (rule 8)
 
-	int            shift, and enter state 91
-	id             shift, and enter state 92
-	'}'            reduce using rule 30
-	'_'            shift, and enter state 93
+	int            shift, and enter state 100
+	id             shift, and enter state 101
+	'}'            reduce using rule 31
+	'_'            shift, and enter state 102
 
-	cases          goto state 88
-	case           goto state 89
-	pat            goto state 90
+	cases          goto state 97
+	case           goto state 98
+	pat            goto state 99
 
-State 77
+State 86
 
 	expr -> for id '=' expr . to expr do expr           (rule 4)
 	expr -> expr . '+' expr                             (rule 13)
@@ -1967,56 +1886,56 @@ State 77
 	expr -> expr . '^' expr                             (rule 16)
 	expr -> expr . '|' expr                             (rule 17)
 
-	to             shift, and enter state 87
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
+	to             shift, and enter state 96
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
 
 
-State 78
+State 87
 
 	expr -> expr . '+' expr                             (rule 13)
 	expr -> expr . '-' expr                             (rule 14)
 	expr -> expr . '&' expr                             (rule 15)
 	expr -> expr . '^' expr                             (rule 16)
 	expr -> expr . '|' expr                             (rule 17)
-	pred -> expr comp expr .                            (rule 44)
+	pred -> expr comp expr .                            (rule 45)
+
+	then           reduce using rule 45
+	and            reduce using rule 45
+	or             reduce using rule 45
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
+
+
+State 88
+
+	pred -> pred . and pred                             (rule 43)
+	pred -> pred . or pred                              (rule 44)
+	pred -> pred or pred .                              (rule 44)
 
 	then           reduce using rule 44
 	and            reduce using rule 44
 	or             reduce using rule 44
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
 
 
-State 79
+State 89
 
-	pred -> pred . and pred                             (rule 42)
-	pred -> pred . or pred                              (rule 43)
-	pred -> pred or pred .                              (rule 43)
+	pred -> pred . and pred                             (rule 43)
+	pred -> pred and pred .                             (rule 43)
+	pred -> pred . or pred                              (rule 44)
 
 	then           reduce using rule 43
 	and            reduce using rule 43
-	or             reduce using rule 43
+	or             shift, and enter state 55
 
 
-State 80
-
-	pred -> pred . and pred                             (rule 42)
-	pred -> pred and pred .                             (rule 42)
-	pred -> pred . or pred                              (rule 43)
-
-	then           reduce using rule 42
-	and            reduce using rule 42
-	or             shift, and enter state 54
-
-
-State 81
+State 90
 
 	expr -> if pred then expr . else expr               (rule 3)
 	expr -> expr . '+' expr                             (rule 13)
@@ -2025,36 +1944,36 @@ State 81
 	expr -> expr . '^' expr                             (rule 16)
 	expr -> expr . '|' expr                             (rule 17)
 
-	else           shift, and enter state 86
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
+	else           shift, and enter state 95
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
 
 
-State 82
+State 91
 
-	args -> expr ',' args .                             (rule 29)
+	args -> expr ',' args .                             (rule 30)
 
-	')'            reduce using rule 29
-
-
-State 83
-
-	lval -> id '[' expr ']' .                           (rule 21)
-
-	'<-'           reduce using rule 21
+	')'            reduce using rule 30
 
 
-State 84
+State 92
+
+	lval -> id '[' expr ']' .                           (rule 22)
+
+	'<-'           reduce using rule 22
+
+
+State 93
 
 	expr -> id '.' idc args . ')'                       (rule 7)
 
-	')'            shift, and enter state 85
+	')'            shift, and enter state 94
 
 
-State 85
+State 94
 
 	expr -> id '.' idc args ')' .                       (rule 7)
 
@@ -2062,6 +1981,7 @@ State 85
 	id             reduce using rule 7
 	idc            reduce using rule 7
 	var            reduce using rule 7
+	void           reduce using rule 7
 	if             reduce using rule 7
 	then           reduce using rule 7
 	else           reduce using rule 7
@@ -2101,215 +2021,347 @@ State 85
 	%eof           reduce using rule 7
 
 
-State 86
+State 95
 
 	expr -> if pred then expr else . expr               (rule 3)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 108
+	expr           goto state 125
 	lval           goto state 4
 
-State 87
+State 96
 
 	expr -> for id '=' expr to . expr do expr           (rule 4)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 107
+	expr           goto state 124
 	lval           goto state 4
 
-State 88
+State 97
 
 	expr -> match expr with '{' cases . '}'             (rule 8)
 
-	'}'            shift, and enter state 106
+	'}'            shift, and enter state 123
 
 
-State 89
+State 98
 
-	cases -> case . cases                               (rule 31)
+	cases -> case . cases                               (rule 32)
 
-	int            shift, and enter state 91
-	id             shift, and enter state 92
-	'}'            reduce using rule 30
-	'_'            shift, and enter state 93
+	int            shift, and enter state 100
+	id             shift, and enter state 101
+	'}'            reduce using rule 31
+	'_'            shift, and enter state 102
 
-	cases          goto state 105
-	case           goto state 89
-	pat            goto state 90
+	cases          goto state 122
+	case           goto state 98
+	pat            goto state 99
 
-State 90
+State 99
 
-	case -> pat . '->' expr                             (rule 32)
+	case -> pat . '->' expr                             (rule 33)
 
-	'->'           shift, and enter state 104
+	'->'           shift, and enter state 121
 
 
-State 91
+State 100
 
-	pat -> int .                                        (rule 34)
+	pat -> int .                                        (rule 35)
+
+	','            reduce using rule 35
+	'->'           reduce using rule 35
+
+
+State 101
+
+	pat -> id .                                         (rule 36)
+	pat -> id . '(' pats ')'                            (rule 37)
+
+	'('            shift, and enter state 120
+	','            reduce using rule 36
+	'->'           reduce using rule 36
+
+
+State 102
+
+	pat -> '_' .                                        (rule 34)
 
 	','            reduce using rule 34
 	'->'           reduce using rule 34
 
 
-State 92
-
-	pat -> id .                                         (rule 35)
-	pat -> id . '(' pats ')'                            (rule 36)
-
-	'('            shift, and enter state 103
-	','            reduce using rule 35
-	'->'           reduce using rule 35
-
-
-State 93
-
-	pat -> '_' .                                        (rule 33)
-
-	','            reduce using rule 33
-	'->'           reduce using rule 33
-
-
-State 94
-
-	var_decl -> var id ':' type_reg . '=' expr          (rule 26)
-
-	'='            shift, and enter state 102
-
-
-State 95
-
-	type_reg -> bits . '[' int ']'                      (rule 55)
-
-	'['            shift, and enter state 101
-
-
-State 96
-
-	type_reg -> range . '[' int ',' int ']'             (rule 56)
-
-	'['            shift, and enter state 100
-
-
-State 97
-
-	type_reg -> data . id                               (rule 57)
-
-	id             shift, and enter state 99
-
-
-State 98
-
-	type_reg -> void .                                  (rule 58)
-
-	'='            reduce using rule 58
-
-
-State 99
-
-	type_reg -> data id .                               (rule 57)
-
-	'='            reduce using rule 57
-
-
-State 100
-
-	type_reg -> range '[' . int ',' int ']'             (rule 56)
-
-	int            shift, and enter state 115
-
-
-State 101
-
-	type_reg -> bits '[' . int ']'                      (rule 55)
-
-	int            shift, and enter state 114
-
-
-State 102
-
-	var_decl -> var id ':' type_reg '=' . expr          (rule 26)
-
-	int            shift, and enter state 2
-	id             shift, and enter state 5
-	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
-
-	expr           goto state 113
-	lval           goto state 4
-
 State 103
 
-	pat -> id '(' . pats ')'                            (rule 36)
+	expr -> trans '[' int ',' int . ']' '(' expr ')'    (rule 9)
 
-	int            shift, and enter state 91
-	id             shift, and enter state 92
-	')'            reduce using rule 37
-	'_'            shift, and enter state 93
+	']'            shift, and enter state 119
 
-	pat            goto state 111
-	pats           goto state 112
 
 State 104
 
-	case -> pat '->' . expr                             (rule 32)
+	expr -> shrink '[' int ']' '(' . expr ')'           (rule 12)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 110
+	expr           goto state 118
 	lval           goto state 4
 
 State 105
 
-	cases -> case cases .                               (rule 31)
+	expr -> ext '[' int ']' '(' . expr ')'              (rule 10)
 
-	'}'            reduce using rule 31
+	int            shift, and enter state 2
+	id             shift, and enter state 5
+	idc            shift, and enter state 6
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
+	expr           goto state 117
+	lval           goto state 4
 
 State 106
+
+	expr -> sext '[' int ']' '(' . expr ')'             (rule 11)
+
+	int            shift, and enter state 2
+	id             shift, and enter state 5
+	idc            shift, and enter state 6
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
+
+	expr           goto state 116
+	lval           goto state 4
+
+State 107
+
+	var_decl -> var id ':' type_reg . '=' expr          (rule 27)
+
+	'='            shift, and enter state 115
+
+
+State 108
+
+	type_reg -> bits . '[' int ']'                      (rule 56)
+
+	'['            shift, and enter state 114
+
+
+State 109
+
+	type_reg -> range . '[' int ',' int ']'             (rule 57)
+
+	'['            shift, and enter state 113
+
+
+State 110
+
+	type_reg -> data . id                               (rule 58)
+
+	id             shift, and enter state 112
+
+
+State 111
+
+	type_reg -> void .                                  (rule 59)
+
+	'='            reduce using rule 59
+
+
+State 112
+
+	type_reg -> data id .                               (rule 58)
+
+	'='            reduce using rule 58
+
+
+State 113
+
+	type_reg -> range '[' . int ',' int ']'             (rule 57)
+
+	int            shift, and enter state 136
+
+
+State 114
+
+	type_reg -> bits '[' . int ']'                      (rule 56)
+
+	int            shift, and enter state 135
+
+
+State 115
+
+	var_decl -> var id ':' type_reg '=' . expr          (rule 27)
+
+	int            shift, and enter state 2
+	id             shift, and enter state 5
+	idc            shift, and enter state 6
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
+
+	expr           goto state 134
+	lval           goto state 4
+
+State 116
+
+	expr -> sext '[' int ']' '(' expr . ')'             (rule 11)
+	expr -> expr . '+' expr                             (rule 13)
+	expr -> expr . '-' expr                             (rule 14)
+	expr -> expr . '&' expr                             (rule 15)
+	expr -> expr . '^' expr                             (rule 16)
+	expr -> expr . '|' expr                             (rule 17)
+
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
+	')'            shift, and enter state 133
+
+
+State 117
+
+	expr -> ext '[' int ']' '(' expr . ')'              (rule 10)
+	expr -> expr . '+' expr                             (rule 13)
+	expr -> expr . '-' expr                             (rule 14)
+	expr -> expr . '&' expr                             (rule 15)
+	expr -> expr . '^' expr                             (rule 16)
+	expr -> expr . '|' expr                             (rule 17)
+
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
+	')'            shift, and enter state 132
+
+
+State 118
+
+	expr -> shrink '[' int ']' '(' expr . ')'           (rule 12)
+	expr -> expr . '+' expr                             (rule 13)
+	expr -> expr . '-' expr                             (rule 14)
+	expr -> expr . '&' expr                             (rule 15)
+	expr -> expr . '^' expr                             (rule 16)
+	expr -> expr . '|' expr                             (rule 17)
+
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
+	')'            shift, and enter state 131
+
+
+State 119
+
+	expr -> trans '[' int ',' int ']' . '(' expr ')'    (rule 9)
+
+	'('            shift, and enter state 130
+
+
+State 120
+
+	pat -> id '(' . pats ')'                            (rule 37)
+
+	int            shift, and enter state 100
+	id             shift, and enter state 101
+	')'            reduce using rule 38
+	'_'            shift, and enter state 102
+
+	pat            goto state 128
+	pats           goto state 129
+
+State 121
+
+	case -> pat '->' . expr                             (rule 33)
+
+	int            shift, and enter state 2
+	id             shift, and enter state 5
+	idc            shift, and enter state 6
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
+
+	expr           goto state 127
+	lval           goto state 4
+
+State 122
+
+	cases -> case cases .                               (rule 32)
+
+	'}'            reduce using rule 32
+
+
+State 123
 
 	expr -> match expr with '{' cases '}' .             (rule 8)
 
@@ -2317,6 +2369,7 @@ State 106
 	id             reduce using rule 8
 	idc            reduce using rule 8
 	var            reduce using rule 8
+	void           reduce using rule 8
 	if             reduce using rule 8
 	then           reduce using rule 8
 	else           reduce using rule 8
@@ -2356,7 +2409,7 @@ State 106
 	%eof           reduce using rule 8
 
 
-State 107
+State 124
 
 	expr -> for id '=' expr to expr . do expr           (rule 4)
 	expr -> expr . '+' expr                             (rule 13)
@@ -2365,15 +2418,15 @@ State 107
 	expr -> expr . '^' expr                             (rule 16)
 	expr -> expr . '|' expr                             (rule 17)
 
-	do             shift, and enter state 109
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
+	do             shift, and enter state 126
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
 
 
-State 108
+State 125
 
 	expr -> if pred then expr else expr .               (rule 3)
 	expr -> expr . '+' expr                             (rule 13)
@@ -2386,6 +2439,7 @@ State 108
 	id             reduce using rule 3
 	idc            reduce using rule 3
 	var            reduce using rule 3
+	void           reduce using rule 3
 	if             reduce using rule 3
 	then           reduce using rule 3
 	else           reduce using rule 3
@@ -2400,11 +2454,11 @@ State 108
 	shrink         reduce using rule 3
 	ext            reduce using rule 3
 	sext           reduce using rule 3
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
 	'='            reduce using rule 3
 	'/='           reduce using rule 3
 	'('            reduce using rule 3
@@ -2425,139 +2479,323 @@ State 108
 	%eof           reduce using rule 3
 
 
-State 109
+State 126
 
 	expr -> for id '=' expr to expr do . expr           (rule 4)
 
 	int            shift, and enter state 2
 	id             shift, and enter state 5
 	idc            shift, and enter state 6
-	if             shift, and enter state 7
-	for            shift, and enter state 8
-	match          shift, and enter state 9
-	trans          shift, and enter state 10
-	shrink         shift, and enter state 11
-	ext            shift, and enter state 12
-	sext           shift, and enter state 13
-	'('            shift, and enter state 14
-	'{'            shift, and enter state 15
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
 
-	expr           goto state 120
+	expr           goto state 142
 	lval           goto state 4
 
-State 110
+State 127
 
 	expr -> expr . '+' expr                             (rule 13)
 	expr -> expr . '-' expr                             (rule 14)
 	expr -> expr . '&' expr                             (rule 15)
 	expr -> expr . '^' expr                             (rule 16)
 	expr -> expr . '|' expr                             (rule 17)
-	case -> pat '->' expr .                             (rule 32)
+	case -> pat '->' expr .                             (rule 33)
 
-	int            reduce using rule 32
-	id             reduce using rule 32
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
-	'}'            reduce using rule 32
-	'_'            reduce using rule 32
-
-
-State 111
-
-	pats -> pat . ',' pats                              (rule 38)
-
-	','            shift, and enter state 119
+	int            reduce using rule 33
+	id             reduce using rule 33
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
+	'}'            reduce using rule 33
+	'_'            reduce using rule 33
 
 
-State 112
+State 128
 
-	pat -> id '(' pats . ')'                            (rule 36)
+	pats -> pat . ',' pats                              (rule 39)
 
-	')'            shift, and enter state 118
+	','            shift, and enter state 141
 
 
-State 113
+State 129
+
+	pat -> id '(' pats . ')'                            (rule 37)
+
+	')'            shift, and enter state 140
+
+
+State 130
+
+	expr -> trans '[' int ',' int ']' '(' . expr ')'    (rule 9)
+
+	int            shift, and enter state 2
+	id             shift, and enter state 5
+	idc            shift, and enter state 6
+	void           shift, and enter state 7
+	if             shift, and enter state 8
+	for            shift, and enter state 9
+	match          shift, and enter state 10
+	trans          shift, and enter state 11
+	shrink         shift, and enter state 12
+	ext            shift, and enter state 13
+	sext           shift, and enter state 14
+	'('            shift, and enter state 15
+	'{'            shift, and enter state 16
+
+	expr           goto state 139
+	lval           goto state 4
+
+State 131
+
+	expr -> shrink '[' int ']' '(' expr ')' .           (rule 12)
+
+	int            reduce using rule 12
+	id             reduce using rule 12
+	idc            reduce using rule 12
+	var            reduce using rule 12
+	void           reduce using rule 12
+	if             reduce using rule 12
+	then           reduce using rule 12
+	else           reduce using rule 12
+	for            reduce using rule 12
+	to             reduce using rule 12
+	do             reduce using rule 12
+	match          reduce using rule 12
+	with           reduce using rule 12
+	and            reduce using rule 12
+	or             reduce using rule 12
+	trans          reduce using rule 12
+	shrink         reduce using rule 12
+	ext            reduce using rule 12
+	sext           reduce using rule 12
+	'+'            reduce using rule 12
+	'-'            reduce using rule 12
+	'&'            reduce using rule 12
+	'|'            reduce using rule 12
+	'^'            reduce using rule 12
+	'='            reduce using rule 12
+	'/='           reduce using rule 12
+	'('            reduce using rule 12
+	')'            reduce using rule 12
+	'{'            reduce using rule 12
+	'}'            reduce using rule 12
+	']'            reduce using rule 12
+	','            reduce using rule 12
+	'_'            reduce using rule 12
+	'<'            reduce using rule 12
+	'>'            reduce using rule 12
+	'<='           reduce using rule 12
+	'>='           reduce using rule 12
+	'<$'           reduce using rule 12
+	'<=$'          reduce using rule 12
+	'>$'           reduce using rule 12
+	'>=$'          reduce using rule 12
+	%eof           reduce using rule 12
+
+
+State 132
+
+	expr -> ext '[' int ']' '(' expr ')' .              (rule 10)
+
+	int            reduce using rule 10
+	id             reduce using rule 10
+	idc            reduce using rule 10
+	var            reduce using rule 10
+	void           reduce using rule 10
+	if             reduce using rule 10
+	then           reduce using rule 10
+	else           reduce using rule 10
+	for            reduce using rule 10
+	to             reduce using rule 10
+	do             reduce using rule 10
+	match          reduce using rule 10
+	with           reduce using rule 10
+	and            reduce using rule 10
+	or             reduce using rule 10
+	trans          reduce using rule 10
+	shrink         reduce using rule 10
+	ext            reduce using rule 10
+	sext           reduce using rule 10
+	'+'            reduce using rule 10
+	'-'            reduce using rule 10
+	'&'            reduce using rule 10
+	'|'            reduce using rule 10
+	'^'            reduce using rule 10
+	'='            reduce using rule 10
+	'/='           reduce using rule 10
+	'('            reduce using rule 10
+	')'            reduce using rule 10
+	'{'            reduce using rule 10
+	'}'            reduce using rule 10
+	']'            reduce using rule 10
+	','            reduce using rule 10
+	'_'            reduce using rule 10
+	'<'            reduce using rule 10
+	'>'            reduce using rule 10
+	'<='           reduce using rule 10
+	'>='           reduce using rule 10
+	'<$'           reduce using rule 10
+	'<=$'          reduce using rule 10
+	'>$'           reduce using rule 10
+	'>=$'          reduce using rule 10
+	%eof           reduce using rule 10
+
+
+State 133
+
+	expr -> sext '[' int ']' '(' expr ')' .             (rule 11)
+
+	int            reduce using rule 11
+	id             reduce using rule 11
+	idc            reduce using rule 11
+	var            reduce using rule 11
+	void           reduce using rule 11
+	if             reduce using rule 11
+	then           reduce using rule 11
+	else           reduce using rule 11
+	for            reduce using rule 11
+	to             reduce using rule 11
+	do             reduce using rule 11
+	match          reduce using rule 11
+	with           reduce using rule 11
+	and            reduce using rule 11
+	or             reduce using rule 11
+	trans          reduce using rule 11
+	shrink         reduce using rule 11
+	ext            reduce using rule 11
+	sext           reduce using rule 11
+	'+'            reduce using rule 11
+	'-'            reduce using rule 11
+	'&'            reduce using rule 11
+	'|'            reduce using rule 11
+	'^'            reduce using rule 11
+	'='            reduce using rule 11
+	'/='           reduce using rule 11
+	'('            reduce using rule 11
+	')'            reduce using rule 11
+	'{'            reduce using rule 11
+	'}'            reduce using rule 11
+	']'            reduce using rule 11
+	','            reduce using rule 11
+	'_'            reduce using rule 11
+	'<'            reduce using rule 11
+	'>'            reduce using rule 11
+	'<='           reduce using rule 11
+	'>='           reduce using rule 11
+	'<$'           reduce using rule 11
+	'<=$'          reduce using rule 11
+	'>$'           reduce using rule 11
+	'>=$'          reduce using rule 11
+	%eof           reduce using rule 11
+
+
+State 134
 
 	expr -> expr . '+' expr                             (rule 13)
 	expr -> expr . '-' expr                             (rule 14)
 	expr -> expr . '&' expr                             (rule 15)
 	expr -> expr . '^' expr                             (rule 16)
 	expr -> expr . '|' expr                             (rule 17)
-	var_decl -> var id ':' type_reg '=' expr .          (rule 26)
+	var_decl -> var id ':' type_reg '=' expr .          (rule 27)
 
-	int            reduce using rule 26
-	id             reduce using rule 26
-	idc            reduce using rule 26
-	var            reduce using rule 26
-	if             reduce using rule 26
-	for            reduce using rule 26
-	match          reduce using rule 26
-	trans          reduce using rule 26
-	shrink         reduce using rule 26
-	ext            reduce using rule 26
-	sext           reduce using rule 26
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
-	'('            reduce using rule 26
-	'{'            reduce using rule 26
-	'}'            reduce using rule 26
-
-
-State 114
-
-	type_reg -> bits '[' int . ']'                      (rule 55)
-
-	']'            shift, and enter state 117
+	int            reduce using rule 27
+	id             reduce using rule 27
+	idc            reduce using rule 27
+	var            reduce using rule 27
+	void           reduce using rule 27
+	if             reduce using rule 27
+	for            reduce using rule 27
+	match          reduce using rule 27
+	trans          reduce using rule 27
+	shrink         reduce using rule 27
+	ext            reduce using rule 27
+	sext           reduce using rule 27
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
+	'('            reduce using rule 27
+	'{'            reduce using rule 27
+	'}'            reduce using rule 27
 
 
-State 115
+State 135
 
-	type_reg -> range '[' int . ',' int ']'             (rule 56)
+	type_reg -> bits '[' int . ']'                      (rule 56)
 
-	','            shift, and enter state 116
-
-
-State 116
-
-	type_reg -> range '[' int ',' . int ']'             (rule 56)
-
-	int            shift, and enter state 122
+	']'            shift, and enter state 138
 
 
-State 117
+State 136
 
-	type_reg -> bits '[' int ']' .                      (rule 55)
+	type_reg -> range '[' int . ',' int ']'             (rule 57)
 
-	'='            reduce using rule 55
-
-
-State 118
-
-	pat -> id '(' pats ')' .                            (rule 36)
-
-	','            reduce using rule 36
-	'->'           reduce using rule 36
+	','            shift, and enter state 137
 
 
-State 119
+State 137
 
-	pats -> pat ',' . pats                              (rule 38)
+	type_reg -> range '[' int ',' . int ']'             (rule 57)
 
-	int            shift, and enter state 91
-	id             shift, and enter state 92
-	')'            reduce using rule 37
-	'_'            shift, and enter state 93
+	int            shift, and enter state 145
 
-	pat            goto state 111
-	pats           goto state 121
 
-State 120
+State 138
+
+	type_reg -> bits '[' int ']' .                      (rule 56)
+
+	'='            reduce using rule 56
+
+
+State 139
+
+	expr -> trans '[' int ',' int ']' '(' expr . ')'    (rule 9)
+	expr -> expr . '+' expr                             (rule 13)
+	expr -> expr . '-' expr                             (rule 14)
+	expr -> expr . '&' expr                             (rule 15)
+	expr -> expr . '^' expr                             (rule 16)
+	expr -> expr . '|' expr                             (rule 17)
+
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
+	')'            shift, and enter state 144
+
+
+State 140
+
+	pat -> id '(' pats ')' .                            (rule 37)
+
+	','            reduce using rule 37
+	'->'           reduce using rule 37
+
+
+State 141
+
+	pats -> pat ',' . pats                              (rule 39)
+
+	int            shift, and enter state 100
+	id             shift, and enter state 101
+	')'            reduce using rule 38
+	'_'            shift, and enter state 102
+
+	pat            goto state 128
+	pats           goto state 143
+
+State 142
 
 	expr -> for id '=' expr to expr do expr .           (rule 4)
 	expr -> expr . '+' expr                             (rule 13)
@@ -2570,6 +2808,7 @@ State 120
 	id             reduce using rule 4
 	idc            reduce using rule 4
 	var            reduce using rule 4
+	void           reduce using rule 4
 	if             reduce using rule 4
 	then           reduce using rule 4
 	else           reduce using rule 4
@@ -2584,11 +2823,11 @@ State 120
 	shrink         reduce using rule 4
 	ext            reduce using rule 4
 	sext           reduce using rule 4
-	'+'            shift, and enter state 36
-	'-'            shift, and enter state 37
-	'&'            shift, and enter state 38
-	'|'            shift, and enter state 39
-	'^'            shift, and enter state 40
+	'+'            shift, and enter state 37
+	'-'            shift, and enter state 38
+	'&'            shift, and enter state 39
+	'|'            shift, and enter state 40
+	'^'            shift, and enter state 41
 	'='            reduce using rule 4
 	'/='           reduce using rule 4
 	'('            reduce using rule 4
@@ -2609,31 +2848,79 @@ State 120
 	%eof           reduce using rule 4
 
 
-State 121
+State 143
 
-	pats -> pat ',' pats .                              (rule 38)
+	pats -> pat ',' pats .                              (rule 39)
 
-	')'            reduce using rule 38
-
-
-State 122
-
-	type_reg -> range '[' int ',' int . ']'             (rule 56)
-
-	']'            shift, and enter state 123
+	')'            reduce using rule 39
 
 
-State 123
+State 144
 
-	type_reg -> range '[' int ',' int ']' .             (rule 56)
+	expr -> trans '[' int ',' int ']' '(' expr ')' .    (rule 9)
 
-	'='            reduce using rule 56
+	int            reduce using rule 9
+	id             reduce using rule 9
+	idc            reduce using rule 9
+	var            reduce using rule 9
+	void           reduce using rule 9
+	if             reduce using rule 9
+	then           reduce using rule 9
+	else           reduce using rule 9
+	for            reduce using rule 9
+	to             reduce using rule 9
+	do             reduce using rule 9
+	match          reduce using rule 9
+	with           reduce using rule 9
+	and            reduce using rule 9
+	or             reduce using rule 9
+	trans          reduce using rule 9
+	shrink         reduce using rule 9
+	ext            reduce using rule 9
+	sext           reduce using rule 9
+	'+'            reduce using rule 9
+	'-'            reduce using rule 9
+	'&'            reduce using rule 9
+	'|'            reduce using rule 9
+	'^'            reduce using rule 9
+	'='            reduce using rule 9
+	'/='           reduce using rule 9
+	'('            reduce using rule 9
+	')'            reduce using rule 9
+	'{'            reduce using rule 9
+	'}'            reduce using rule 9
+	']'            reduce using rule 9
+	','            reduce using rule 9
+	'_'            reduce using rule 9
+	'<'            reduce using rule 9
+	'>'            reduce using rule 9
+	'<='           reduce using rule 9
+	'>='           reduce using rule 9
+	'<$'           reduce using rule 9
+	'<=$'          reduce using rule 9
+	'>$'           reduce using rule 9
+	'>=$'          reduce using rule 9
+	%eof           reduce using rule 9
+
+
+State 145
+
+	type_reg -> range '[' int ',' int . ']'             (rule 57)
+
+	']'            shift, and enter state 146
+
+
+State 146
+
+	type_reg -> range '[' int ',' int ']' .             (rule 57)
+
+	'='            reduce using rule 57
 
 
 -----------------------------------------------------------------------------
 Grammar Totals
 -----------------------------------------------------------------------------
-Number of rules: 59
+Number of rules: 60
 Number of terminals: 52
 Number of non-terminals: 14
-Number of states: 124
+Number of states: 147

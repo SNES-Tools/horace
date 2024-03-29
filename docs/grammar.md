@@ -214,9 +214,9 @@ EXPR_ARGS ::= ""
             | EXPR, EXPR_ARGS
 
 UNOP ::= transmute
-       | shrink
-       | extend
-       | sign-extend
+       | shrink n
+       | extend n
+       | sign-extend n
        | display
 
 -- precedence rules between binary operations should be as usual

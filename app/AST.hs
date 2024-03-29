@@ -15,6 +15,7 @@ data Expr
   | ExprBinOp BinOp Expr Expr
   | ExprVar Id
   | ExprArrIndex Expr Expr      -- not planned to be supported yet
+  | ExprVoid
   deriving (Show)
 
 data LVal
@@ -34,11 +35,16 @@ data Var =
   Var Id Type Expr
   deriving (Show)
 
+{-
+  Use of Maybe type allows for either intentionally specifying the target or
+  leaving to be inferred (although the typechecker will not do any inference so
+  those cases don't work at the moment).
+-}
 data UnOp
-  = UnOpTransmute
-  | UnOpShrink
-  | UnOpExtend
-  | UnOpSignExtend
+  = UnOpTransmute (Maybe Int) (Maybe Int)
+  | UnOpShrink (Maybe Word)
+  | UnOpExtend (Maybe Word)
+  | UnOpSignExtend (Maybe Word)
   | UnOpDisplay                 -- not implemented
   deriving (Show)
 
@@ -89,6 +95,13 @@ data Type
   | TypeSprite Id         -- not implemented
   | TypeBits Word
   | TypeRange Int Int
+  | TypeLit Word Int      -- for the type checker, not really part of the AST?
   | TypeData Id
   | TypeVoid              -- not implemented
-  deriving (Show)
+
+instance Show Type where
+  show (TypeBits n) = "bits[" ++ show n ++ "]"
+  show (TypeRange l u) = "range[" ++ show l ++ "," ++ show u ++ "]"
+  show (TypeLit b r) =
+    "bits[" ++ show b ++ "] or range[" ++ show r ++ "," ++ show r ++ "]"
+  show TypeVoid = "void"
