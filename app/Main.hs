@@ -24,7 +24,7 @@ main = do
     Left t -> do
                 putStr "Type: "
                 print t
-    Right e -> putStrLn e
+    Right e -> print e
 
 --  putStr "Eval: "
 --  (print . eval) ast

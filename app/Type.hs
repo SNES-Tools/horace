@@ -75,8 +75,11 @@ newContext = []
 extendContext :: Context -> Id -> Type -> Context
 extendContext c id t = (id, t) : c
 
-lookupContext :: Context -> Id -> Maybe Type
-lookupContext = flip lookup
+lookupContext :: Context -> Id -> Either ErrorMessage Type
+lookupContext c id =
+  case lookup id c of
+    Just t -> Right t
+    Nothing -> Left $ ["Lookup failed: ", show id]
 
 typeof :: Expr -> Either String Type
 typeof e =
@@ -84,122 +87,98 @@ typeof e =
     Left s -> Left $ "Type error: " ++ unwords s
     Right t -> Right t
 
+typeError :: [String] -> Either [String] a
+typeError = Left
+
+--typeError = Left . unwords
 typeofExpr :: Context -> Expr -> Either ErrorMessage Type
 typeofExpr _ (ExprLit i) = Right $ constantType i
 typeofExpr _ ExprVoid = Right TypeVoid
-typeofExpr c (ExprIf p e1 e2) =
-  case typeofPred c p of
-    Right _ ->
-      case (typeofExpr c e1, typeofExpr c e2) of
-        (Left e, _) -> Left e
-        (_, Left e) -> Left e
-        (Right t1, Right t2) ->
-          if t1 == t2
-            then Right t1
-            else Left ["types in the if expression do not match"]
-    Left e -> Left e
+typeofExpr c (ExprIf p e1 e2) = do
+  _ <- typeofPred c p
+  t1 <- typeofExpr c e1
+  t2 <- typeofExpr c e2
+  if t1 == t2
+    then return t1
+    else typeError ["types in the if expression do not match"]
 -- note: no Nothing variants are handled
-typeofExpr c (ExprUnOp (UnOpTransmute (Just l') (Just u')) e) =
-  case typeofExpr c e of
-    r@(Left _) -> r
-    Right (TypeRange l u) -> tryTransmute (l, u)
-    Right (TypeLit _ v) -> tryTransmute (v, v)
-    _ -> Left ["transmute used on a non-range type"]
+typeofExpr c (ExprUnOp (UnOpTransmute (Just l') (Just u')) e) = do
+  t <- typeofExpr c e
+  case t of
+    TypeRange l u -> tryTransmute (l, u)
+    TypeLit _ v -> tryTransmute (v, v)
+    _ -> typeError ["transmute used on a non-range type"]
   where
     tryTransmute (l, u) =
       case (l, u) /\ (l', u') of
-        Just _ -> Right $ TypeRange l' u'
-        Nothing -> Left ["transmute used between disjoint ranges"]
-typeofExpr c (ExprUnOp (UnOpShrink (Just n')) e) =
-  case typeofExpr c e of
-    r@(Left _) -> r
-    Right (TypeBits n) -> tryShrink n
-    Right (TypeLit n _) -> tryShrink n
-    _ -> Left ["shrink used on a non-bits type"]
+        Just _ -> return $ TypeRange l' u'
+        Nothing -> typeError ["transmute used between disjoint ranges"]
+typeofExpr c (ExprUnOp (UnOpShrink (Just n')) e) = do
+  t <- typeofExpr c e
+  case t of
+    TypeBits n -> tryShrink n
+    TypeLit n _ -> tryShrink n
+    _ -> typeError ["shrink used on a non-bits type"]
   where
     tryShrink n =
       if n' < n
-        then Right $ TypeBits n'
-        else Left ["trying to shrink bits to equal or larger width"]
-typeofExpr c (ExprUnOp (UnOpExtend (Just n')) e) =
-  case typeofExpr c e of
-    r@(Left _) -> r
-    Right (TypeBits n) -> tryExtend n
-    Right (TypeLit n _) -> tryExtend n
-    _ -> Left ["extend used on a non-bits type"]
+        then return $ TypeBits n'
+        else typeError ["trying to shrink bits to equal or larger width"]
+typeofExpr c (ExprUnOp (UnOpExtend (Just n')) e) = do
+  t <- typeofExpr c e
+  case t of
+    TypeBits n -> tryExtend n
+    TypeLit n _ -> tryExtend n
+    _ -> typeError ["extend used on a non-bits type"]
   where
     tryExtend n =
       if n' > n
-        then Right $ TypeBits n'
-        else Left ["trying to extend bits to equal or larger width"]
-typeofExpr c (ExprUnOp (UnOpSignExtend (Just n')) e) =
-  case typeofExpr c e of
-    r@(Left _) -> r
-    Right (TypeBits n) -> trySignExtend n
-    Right (TypeLit n _) -> trySignExtend n
-    _ -> Left ["sign-extend used on a non-bits type"]
+        then return $ TypeBits n'
+        else typeError ["trying to extend bits to equal or smaller width"]
+typeofExpr c (ExprUnOp (UnOpSignExtend (Just n')) e) = do
+  t <- typeofExpr c e
+  case t of
+    TypeBits n -> trySignExtend n
+    TypeLit n _ -> trySignExtend n
+    _ -> typeError ["sign-extend used on a non-bits type"]
   where
     trySignExtend n =
       if n' > n
-        then Right $ TypeBits n'
-        else Left ["trying to sign-extend bits to equal or larger width"]
-typeofExpr c (ExprBinOp BinOpBitAnd e1 e2) =
-  case (typeofExpr c e1, typeofExpr c e2) of
-    (Left e, _) -> Left e
-    (_, Left e) -> Left e
-    (Right t1, Right t2) -> bitwiseOpType t1 t2
-typeofExpr c (ExprBinOp BinOpBitOr e1 e2) =
-  case (typeofExpr c e1, typeofExpr c e2) of
-    (Left e, _) -> Left e
-    (_, Left e) -> Left e
-    (Right t1, Right t2) -> bitwiseOpType t1 t2
-typeofExpr c (ExprBinOp BinOpBitEor e1 e2) =
-  case (typeofExpr c e1, typeofExpr c e2) of
-    (Left e, _) -> Left e
-    (_, Left e) -> Left e
-    (Right t1, Right t2) -> bitwiseOpType t1 t2
-typeofExpr c (ExprBinOp BinOpAdd e1 e2) =
-  case (typeofExpr c e1, typeofExpr c e2) of
-    (Left e, _) -> Left e
-    (_, Left e) -> Left e
+        then return $ TypeBits n'
+        else typeError ["trying to sign-extend bits to equal or smaller width"]
+typeofExpr c (ExprBinOp BinOpBitAnd e1 e2) = bitwiseOpType c e1 e2
+typeofExpr c (ExprBinOp BinOpBitOr e1 e2) = bitwiseOpType c e1 e2
+typeofExpr c (ExprBinOp BinOpBitEor e1 e2) = bitwiseOpType c e1 e2
+typeofExpr c (ExprBinOp BinOpAdd e1 e2) = do
+  t1 <- typeofExpr c e1
+  t2 <- typeofExpr c e2
+  case (t1, t2) of
     -- no handling of constant addition which is outside usual bounds!!
-    (Right (TypeLit _ i1), Right (TypeLit _ i2)) ->
-      Right $ constantType $ i1 + i2
+    (TypeLit _ i1, TypeLit _ i2) -> return $ constantType $ i1 + i2
     -- bit cases
-    (Right b1@(TypeBits _), Right b2@(TypeBits _)) -> bitwiseOpType b1 b2
-    (Right (TypeLit b _), Right b2@(TypeBits _)) ->
-      bitwiseOpType (TypeBits b) b2
-    (Right b1@(TypeBits _), Right (TypeLit b _)) ->
-      bitwiseOpType b1 (TypeBits b)
+    (TypeBits _, TypeBits _) -> bitwiseOpType c e1 e2
+    (TypeLit _ _, TypeBits _) -> bitwiseOpType c e1 e2
+    (TypeBits _, TypeLit _ _) -> bitwiseOpType c e1 e2
     -- range cases
-    (Right (TypeRange l1 u1), Right (TypeRange l2 u2)) ->
-      Right $ TypeRange (l1 + l2) (u1 + u2)
-    (Right (TypeLit _ v), Right (TypeRange l2 u2)) ->
-      Right $ TypeRange (v + l2) (v + u2)
-    (Right (TypeRange l1 u1), Right (TypeLit _ v)) ->
-      Right $ TypeRange (l1 + v) (u1 + v)
-    _ -> Left ["addition of incompatible types"]
-typeofExpr c (ExprBinOp BinOpSub e1 e2) =
-  case (typeofExpr c e1, typeofExpr c e2) of
-    (Left e, _) -> Left e
-    (_, Left e) -> Left e
+    (TypeRange l1 u1, TypeRange l2 u2) -> return $ TypeRange (l1 + l2) (u1 + u2)
+    (TypeLit _ v, TypeRange l2 u2) -> return $ TypeRange (v + l2) (v + u2)
+    (TypeRange l1 u1, TypeLit _ v) -> return $ TypeRange (l1 + v) (u1 + v)
+    _ -> typeError ["addition of incompatible types"]
+typeofExpr c (ExprBinOp BinOpSub e1 e2) = do
+  t1 <- typeofExpr c e1
+  t2 <- typeofExpr c e2
+  case (t1, t2) of
     -- no handling of constant addition which is outside usual bounds!!
-    (Right (TypeLit _ i1), Right (TypeLit _ i2)) ->
-      Right $ constantType $ i1 - i2
+    (TypeLit _ i1, TypeLit _ i2) -> return $ constantType $ i1 - i2
     -- bit cases
-    (Right b1@(TypeBits _), Right b2@(TypeBits _)) -> bitwiseOpType b1 b2
-    (Right (TypeLit b _), Right b2@(TypeBits _)) ->
-      bitwiseOpType (TypeBits b) b2
-    (Right b1@(TypeBits _), Right (TypeLit b _)) ->
-      bitwiseOpType b1 (TypeBits b)
+    (TypeBits _, TypeBits _) -> bitwiseOpType c e1 e2
+    (TypeLit _ _, TypeBits _) -> bitwiseOpType c e1 e2
+    (TypeBits _, TypeLit _ _) -> bitwiseOpType c e1 e2
     -- range cases
-    (Right (TypeRange l1 u1), Right (TypeRange l2 u2)) ->
-      Right $ TypeRange (l1 - u2) (u1 - l2)
-    (Right (TypeLit _ v), Right (TypeRange l2 u2)) ->
-      Right $ TypeRange (v - u2) (v - l2)
-    (Right (TypeRange l1 u1), Right (TypeLit _ v)) ->
-      Right $ TypeRange (l1 - v) (u1 - v)
-    _ -> Left ["subtraction of incompatible types"]
+    (TypeRange l1 u1, TypeRange l2 u2) -> return $ TypeRange (l1 - u2) (u1 - l2)
+    (TypeLit _ v, TypeRange l2 u2) -> return $ TypeRange (v - u2) (v - l2)
+    (TypeRange l1 u1, TypeLit _ v) -> return $ TypeRange (l1 - v) (u1 - v)
+    _ -> typeError ["subtraction of incompatible types"]
 {-
   for typeofExpr, we expect it to be that the bindings in `vs` are done
   sequentially, i.e. declarations are able to see the previous binding
@@ -208,21 +187,15 @@ typeofExpr c (ExprBlock vs es) = do
   c' <- typeofVars c vs
   t <- foldM (const $ typeofExpr c') TypeVoid es
   return t
-typeofExpr c (ExprVar id) =
-  case lookupContext c id of
-    Just (TypeBits b) -> Right $ TypeBits b
-    Just (TypeRange l u) -> Right $ TypeRange l u
-    Nothing -> Left ["variable not in scope:", id]
-typeofExpr c (ExprAssign (LValId id) e) =
-  case lookupContext c id of
-    Just t ->
-      case typeofExpr c e of
-        r@(Left _) -> r
-        Right t' ->
-          if t' == t
-            then Right t'
-            else Left ["types not equal for assignment"]
-    Nothing -> Left ["variable not in scope:", id]
+typeofExpr c (ExprVar id) = do
+  t <- lookupContext c id
+  return t
+typeofExpr c (ExprAssign (LValId id) e) = do
+  t <- lookupContext c id
+  t' <- typeofExpr c e
+  if t == t'
+    then return t
+    else typeError ["types not equal for assignment"]
 typeofExpr _ _ = Left ["feature is undefined"]
 
 -- this does not verify if the written type declaration is legal!
@@ -289,24 +262,21 @@ constantType i
       let x' = max x minBits
        in TypeLit x' i
 
-bitwiseOpType :: Type -> Type -> Either ErrorMessage Type
-bitwiseOpType (TypeBits m) (TypeBits n) =
-  if m == n
-    then Right $ TypeBits m
-    else Left ["bit widths are not equal"]
-bitwiseOpType (TypeBits n) (TypeLit m _) =
-  if m == n
-    then Right $ TypeBits m
-    else Left ["bit widths are not equal"]
-bitwiseOpType (TypeLit m _) (TypeBits n) =
-  if m == n
-    then Right $ TypeBits m
-    else Left ["bit widths are not equal"]
-bitwiseOpType (TypeLit n _) (TypeLit m _) =
-  if m == n
-    then Right $ TypeBits m
-    else Left ["bit widths are not equal"]
-bitwiseOpType _ _ = Left ["operands of bitwise operators are not bit types"]
+bitwiseOpType :: Context -> Expr -> Expr -> Either ErrorMessage Type
+bitwiseOpType c e1 e2 = do
+  t1 <- typeofExpr c e1
+  t2 <- typeofExpr c e2
+  case (t1, t2) of
+    (TypeBits n1, TypeBits n2) -> checkEqual n1 n2
+    (TypeLit n1 _, TypeBits n2) -> checkEqual n1 n2
+    (TypeBits n1, TypeLit n2 _) -> checkEqual n1 n2
+    (TypeLit n1 _, TypeLit n2 _) -> checkEqual n1 n2
+    _ -> typeError ["operands of bitwise operators are not bit types"]
+  where
+    checkEqual n1 n2 =
+      if n1 == n2
+        then return $ TypeBits n1
+        else typeError ["bit widths are not equal"]
 
 (/\) :: (Integral a) => (a, a) -> (a, a) -> Maybe (a, a)
 (l1, u1) /\ (l2, u2) =
