@@ -6,6 +6,7 @@ import Parser
 import Lexer
 import Type
 import Eval
+import CodeGen
 import Instructions
 import Prettyprinter
 
@@ -32,6 +33,12 @@ main = do
 
 --  putStr "Eval: "
 --  (print . eval) ast
+
+testCode :: String -> IO ()
+testCode str = do
+  let ast = (parse . lexer) str
+  code <- codeGen ast
+  (putDocCompact . pretty) code
 
 {-
 repl :: IO ()

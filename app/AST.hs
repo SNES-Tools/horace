@@ -2,6 +2,8 @@ module AST where
 
 type Id = String
 
+type Prog = Expr
+
 data Expr
   = ExprLit Int
   | ExprBlock [Var] [Expr]
