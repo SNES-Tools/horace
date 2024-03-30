@@ -6,6 +6,8 @@ import AST
 
 type ErrorMessage = [String]
 
+type Result a = Either ErrorMessage a
+
 {-
   Arrays must have 1-32 elements. (Upper bound is completely arbitrary.)
 -}
@@ -75,7 +77,7 @@ newContext = []
 extendContext :: Context -> Id -> Type -> Context
 extendContext c id t = (id, t) : c
 
-lookupContext :: Context -> Id -> Either ErrorMessage Type
+lookupContext :: Context -> Id -> Result Type
 lookupContext c id =
   case lookup id c of
     Just t -> Right t
@@ -91,7 +93,7 @@ typeError :: [String] -> Either [String] a
 typeError = Left
 
 --typeError = Left . unwords
-typeofExpr :: Context -> Expr -> Either ErrorMessage Type
+typeofExpr :: Context -> Expr -> Result Type
 typeofExpr _ (ExprLit i) = Right $ constantType i
 typeofExpr _ ExprVoid = Right TypeVoid
 typeofExpr c (ExprIf p e1 e2) = do
@@ -201,10 +203,10 @@ typeofExpr c (ExprAssign (LValId id) e) = do
 typeofExpr _ _ = Left ["feature is undefined"]
 
 -- this does not verify if the written type declaration is legal!
-typeofVars :: Context -> [Var] -> Either ErrorMessage Context
+typeofVars :: Context -> [Var] -> Result Context
 typeofVars = foldM typeofVar
 
-typeofVar :: Context -> Var -> Either ErrorMessage Context
+typeofVar :: Context -> Var -> Result Context
 typeofVar c (Var id t e) = do
   t' <- typeofExpr c e
   case lookupContext c id of
@@ -215,7 +217,7 @@ typeofVar c (Var id t e) = do
     Right _ -> typeError ["variable already in scope: ", id]
 
 -- predicates have no type, but is just a type-checker
-typeofPred :: Context -> Pred -> Either ErrorMessage ()
+typeofPred :: Context -> Pred -> Result ()
 typeofPred _ (PredLit _) = Right ()
 typeofPred c (PredUnOp _ p) = do
   _ <- typeofPred c p
@@ -274,7 +276,7 @@ constantType i
       let x' = max x minBits
        in TypeLit x' i
 
-bitwiseOpType :: Context -> Expr -> Expr -> Either ErrorMessage Type
+bitwiseOpType :: Context -> Expr -> Expr -> Result Type
 bitwiseOpType c e1 e2 = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2

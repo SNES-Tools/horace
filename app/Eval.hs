@@ -89,6 +89,25 @@ evalExpr (ExprUnOp (UnOpSignExtend (Just width')) expr) = do
                num
                [bit (fromIntegral i) | i <- [width .. (width' - 1)]]
         else return $ ValBits width' num
+evalExpr (ExprBinOp op expr1 expr2) = do
+  val1 <- evalExpr expr1
+  val2 <- evalExpr expr2
+  case (val1, val2) of
+    (ValBits width num1, ValBits _ num2) ->
+      return $ ValBits width $ op' num1 num2
+      where op' =
+              case op of
+                BinOpAdd -> (+)
+                BinOpSub -> (-)
+                BinOpBitAnd -> (.&.)
+                BinOpBitOr -> (.|.)
+                BinOpBitEor -> xor
+      -- need to get rid of carry!! !! !!
+    (ValRange num1, ValRange num2) -> return $ ValRange $ op' num1 num2
+      where op' =
+              case op of
+                BinOpAdd -> (+)
+                BinOpSub -> (-)
 evalExpr ExprVoid = return ValVoid
 evalExpr _ = undefined
 
