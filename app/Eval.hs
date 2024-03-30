@@ -25,10 +25,10 @@ newEnv :: Env
 newEnv = []
 
 replace :: (Eq a) => a -> b -> [(a, b)] -> [(a, b)]
-replace a b ((a', _):xs) =
+replace a b (x@(a', _):xs) =
   if a == a'
     then (a', b) : xs
-    else replace a b xs
+    else x : (replace a b xs)
 replace _ _ [] = undefined
 
 eval :: Expr -> Value
@@ -117,7 +117,6 @@ evalVar :: Var -> Eval ()
 evalVar (Var id _ expr) = do
   val <- evalExpr expr
   modify $ (:) (id, val)
-  return ()
 
 evalPred :: Pred -> Eval Bool
 evalPred (PredLit bool) = return bool
