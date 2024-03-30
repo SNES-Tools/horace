@@ -94,7 +94,7 @@ evalExpr (ExprBinOp op expr1 expr2) = do
   val2 <- evalExpr expr2
   case (val1, val2) of
     (ValBits width num1, ValBits _ num2) ->
-      return $ ValBits width $ op' num1 num2
+      return $ ValBits width $ mod (op' num1 num2) (2 ^ width)
       where op' =
               case op of
                 BinOpAdd -> (+)
@@ -102,7 +102,6 @@ evalExpr (ExprBinOp op expr1 expr2) = do
                 BinOpBitAnd -> (.&.)
                 BinOpBitOr -> (.|.)
                 BinOpBitEor -> xor
-      -- need to get rid of carry!! !! !!
     (ValRange num1, ValRange num2) -> return $ ValRange $ op' num1 num2
       where op' =
               case op of
