@@ -152,8 +152,9 @@ typeofExpr c (ExprBinOp BinOpBitEor e1 e2) = bitwiseOpType c e1 e2
 typeofExpr c (ExprBinOp BinOpAdd e1 e2) = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
-  case (t1, t2) of
+  case (t1, t2)
     -- no handling of constant addition which is outside usual bounds!!
+        of
     (TypeLit _ i1, TypeLit _ i2) -> return $ constantType $ i1 + i2
     -- bit cases
     (TypeBits _, TypeBits _) -> bitwiseOpType c e1 e2
@@ -167,8 +168,9 @@ typeofExpr c (ExprBinOp BinOpAdd e1 e2) = do
 typeofExpr c (ExprBinOp BinOpSub e1 e2) = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
-  case (t1, t2) of
+  case (t1, t2)
     -- no handling of constant addition which is outside usual bounds!!
+        of
     (TypeLit _ i1, TypeLit _ i2) -> return $ constantType $ i1 - i2
     -- bit cases
     (TypeBits _, TypeBits _) -> bitwiseOpType c e1 e2
@@ -200,43 +202,53 @@ typeofExpr _ _ = Left ["feature is undefined"]
 
 -- this does not verify if the written type declaration is legal!
 typeofVars :: Context -> [Var] -> Either ErrorMessage Context
-typeofVars c = foldl foo (Right c)
-  where
-    foo r@(Left _) _ = r
-    foo (Right c) (Var id t e) =
-      case typeofExpr c e of
-        Left e -> Left e
-        Right t' ->
-          if t' == t
-            then case lookupContext c id of
-                   Just _ -> Left ["variable already in scope: ", id]
-                   Nothing -> Right $ extendContext c id t
-            else Left
-                   [ "types not equal for assignment. Variable"
-                   , id
-                   , "is of type"
-                   , show t
-                   , "while expression is type"
-                   , show t'
-                   ]
+typeofVars = foldM typeofVar
+
+typeofVar :: Context -> Var -> Either ErrorMessage Context
+typeofVar c (Var id t e) = do
+  t' <- typeofExpr c e
+  case lookupContext c id of
+    Left _ ->
+      if t == t'
+        then return $ extendContext c id t
+        else typeError ["types not equal for assignment"]
+    Right _ -> typeError ["variable already in scope: ", id]
 
 -- predicates have no type, but is just a type-checker
 typeofPred :: Context -> Pred -> Either ErrorMessage ()
 typeofPred _ (PredLit _) = Right ()
-typeofPred c (PredUnOp _ p) =
-  case typeofPred c p of
-    l@(Right _) -> l
-    r@(Left e) -> r
-typeofPred c (PredBinOp _ p1 p2) =
-  case (typeofPred c p1, typeofPred c p2) of
-    (Left e, _) -> Left e
-    (_, Left e) -> Left e
-    (Right _, Right _) -> Right ()
-typeofPred c (PredComp _ e1 e2) =
-  case (typeofExpr c e1, typeofExpr c e2) of
-    (Left e, _) -> Left e
-    (_, Left e) -> Left e
-    (Right _, Right _) -> Right ()
+typeofPred c (PredUnOp _ p) = do
+  _ <- typeofPred c p
+  return ()
+typeofPred c (PredBinOp _ p1 p2) = do
+  _ <- typeofPred c p1
+  _ <- typeofPred c p2
+  return ()
+typeofPred c (PredComp _ e1 e2) = do
+  t1 <- typeofExpr c e1
+  t2 <- typeofExpr c e2
+  case (t1, t2)
+    -- comparisons of all integer literals is allowed? because it's obvious?
+        of
+    (TypeLit _ i1, TypeLit _ i2) -> return ()
+    -- bit cases
+    (TypeBits b1, TypeBits b2) ->
+      if b1 == b2
+        then return ()
+        else typeError ["comparison of bits that are not equal"]
+    (TypeLit b1 _, TypeBits b2) ->
+      if b1 == b2
+        then return ()
+        else typeError ["comparison of bits that are not equal"]
+    (TypeBits b1, TypeLit b2 _) ->
+      if b1 == b2
+        then return ()
+        else typeError ["comparison of bits that are not equal"]
+    -- range cases (comparisons of any ranges are okay?)
+    (TypeRange _ _, TypeRange _ _) -> return ()
+    (TypeLit _ _, TypeRange _ _) -> return ()
+    (TypeRange _ _, TypeLit _ _) -> return ()
+    _ -> typeError ["comparison of incompatible types"]
 
 isBits :: Type -> Bool
 isBits (TypeBits _) = True
