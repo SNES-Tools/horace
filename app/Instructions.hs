@@ -1,5 +1,9 @@
 module Instructions where
 
+import Prettyprinter
+import Prettyprinter.Render.Text
+import System.IO
+
 import Data.Word (Word16, Word32, Word8)
 
 {-
@@ -78,7 +82,7 @@ data Instruction
   | WDM Operand
   | PEA Operand
   | PEI Operand
-  | PER
+  | PER Operand
   | PHA
   | PHX
   | PHY
@@ -200,98 +204,124 @@ isValidOperand (WDM (Imm8 _)) = True -- only valid operand type
 isValidOperand (PEA (Imm16 _)) = True -- only valid operand type
 isValidOperand (PEI (Dir _)) = True -- only valid operand type
 isValidOperand (PER (Label16 _)) = True -- only valid operand type
-    -- "common" operands are for the set of  arithmetic/memory instructions
-    -- which all accept a lot (15) of operand types
-  where
-    isCommonOp (DirXInd _) = True
-    isCommonOp (Stack _) = True
-    isCommonOp (Dir _) = True
-    isCommonOp (DirIndLong _) = True
-    isCommonOp (Imm8 _) = True
-    isCommonOp (Imm16 _) = True
-    isCommonOp (Abs _) = True
-    isCommonOp (Long _) = True
-    isCommonOp (DirIndY _) = True
-    isCommonOp (DirInd _) = True
-    isCommonOp (StackIndY _) = True
-    isCommonOp (DirX _) = True
-    isCommonOp (DirIndLongY _) = True
-    isCommonOp (AbsY _) = True
-    isCommonOp (AbsX _) = True
-    isCommonOp (LongX _) = True
-    isCommonOp _ = False
-    -- operand types for CPX and CPY
-    isCompareOp (Imm8 _) = True
-    isCompareOp (Imm16 _) = True
-    isCompareOp (Dir _) = True
-    isCompareOp (Abs _) = True
-    isCompareOp _ = False
-    -- operand types for INC, DEC, ASL, LSR, ROL, ROR
-    isShiftOp Accumulator = True
-    isShiftOp (Dir _) = True
-    isShiftOp (Abs _) = True
-    isShiftOp (DirX _) = True
-    isShiftOp (AbsX _) = True
-    isShiftOp _ = False
-    -- operand types for BIT
-    isBitOp (Dir _) = True
-    isBitOp (Abs _) = True
-    isBitOp (DirX _) = True
-    isBitOp (AbsX _) = True
-    isBitOp (Imm8 _) = True
-    isBitOp (Imm16 _) = True
-    isBitOp _ = False
-    -- operand types for TRB and TSB
-    isTestOp (Dir _) = True
-    isTestOp (Abs _) = True
-    isTestOp _ = False
-    -- operand types for BCC, BCS, BEQ, BMI, BNE, BPL, BRA, BVC, BVS
-    isBranchOp (Label8 _) = True
-    isBranchOp _ = False
-    -- operand types for JMP
-    isJumpOp (Label16 _) = True
-    isJumpOp (Label24 _) = True
-    isJumpOp (AbsInd _) = True -- but these can be labels!
-    isJumpOp (AbsXInd _) = True -- but these can be labels!
-    isJumpOp (AbsIndLong _) = True -- but these can be labels!
-    isJumpOp _ = False
-    -- operand types for JSR
-    isJsrOp (Label16 _) = True
-    isJsrOp (AbsXInd _) = True -- but these can be labels!
-    isJsrOp _ = False
-    -- operand types for LDX
-    isLoadXOp (Imm8 _) = True
-    isLoadXOp (Imm16 _) = True
-    isLoadXOp (Abs _) = True
-    isLoadXOp (AbsY _) = True
-    isLoadXOp (Dir _) = True
-    isLoadXOp (DirY _) = True
-    isLoadXOp _ = False
-    -- operand types for LDY
-    isLoadYOp (Imm8 _) = True
-    isLoadYOp (Imm16 _) = True
-    isLoadYOp (Abs _) = True
-    isLoadYOp (AbsX _) = True
-    isLoadYOp (Dir _) = True
-    isLoadYOp (DirX _) = True
-    isLoadYOp _ = False
-    -- operand types for STX
-    isStoreXOp (Abs _) = True
-    isStoreXOp (Dir _) = True
-    isStoreXOp (DirY _) = True
-    isStoreXOp _ = False
-    -- operand types for STY
-    isStoreYOp (Abs _) = True
-    isStoreYOp (Dir _) = True
-    isStoreYOp (DirX _) = True
-    isStoreYOp _ = False
-    -- operand types for STZ
-    isStoreZOp (Abs _) = True
-    isStoreZOp (Absx _) = True
-    isStoreZOp (Dir _) = True
-    isStoreZOp (DirX _) = True
-    isStoreZOp _ = False
 isValidOperand _ = False -- everything else is false
+
+-- "common" operands are for the set of  arithmetic/memory instructions
+-- which all accept a lot (15) of operand types
+isCommonOp :: Operand -> Bool
+isCommonOp (DirXInd _) = True
+isCommonOp (Stack _) = True
+isCommonOp (Dir _) = True
+isCommonOp (DirIndLong _) = True
+isCommonOp (Imm8 _) = True
+isCommonOp (Imm16 _) = True
+isCommonOp (Abs _) = True
+isCommonOp (Long _) = True
+isCommonOp (DirIndY _) = True
+isCommonOp (DirInd _) = True
+isCommonOp (StackIndY _) = True
+isCommonOp (DirX _) = True
+isCommonOp (DirIndLongY _) = True
+isCommonOp (AbsY _) = True
+isCommonOp (AbsX _) = True
+isCommonOp (LongX _) = True
+isCommonOp _ = False
+
+-- operand types for CPX and CPY
+isCompareOp :: Operand -> Bool
+isCompareOp (Imm8 _) = True
+isCompareOp (Imm16 _) = True
+isCompareOp (Dir _) = True
+isCompareOp (Abs _) = True
+isCompareOp _ = False
+
+-- operand types for INC, DEC, ASL, LSR, ROL, ROR
+isShiftOp :: Operand -> Bool
+isShiftOp Accumulator = True
+isShiftOp (Dir _) = True
+isShiftOp (Abs _) = True
+isShiftOp (DirX _) = True
+isShiftOp (AbsX _) = True
+isShiftOp _ = False
+
+-- operand types for BIT
+isBitOp :: Operand -> Bool
+isBitOp (Dir _) = True
+isBitOp (Abs _) = True
+isBitOp (DirX _) = True
+isBitOp (AbsX _) = True
+isBitOp (Imm8 _) = True
+isBitOp (Imm16 _) = True
+isBitOp _ = False
+
+-- operand types for TRB and TSB
+isTestOp :: Operand -> Bool
+isTestOp (Dir _) = True
+isTestOp (Abs _) = True
+isTestOp _ = False
+
+-- operand types for BCC, BCS, BEQ, BMI, BNE, BPL, BRA, BVC, BVS
+isBranchOp :: Operand -> Bool
+isBranchOp (Label8 _) = True
+isBranchOp _ = False
+
+-- operand types for JMP
+isJumpOp :: Operand -> Bool
+isJumpOp (Label16 _) = True
+isJumpOp (Label24 _) = True
+isJumpOp (AbsInd _) = True -- but these can be labels!
+isJumpOp (AbsXInd _) = True -- but these can be labels!
+isJumpOp (AbsIndLong _) = True -- but these can be labels!
+isJumpOp _ = False
+
+-- operand types for JSR
+isJsrOp :: Operand -> Bool
+isJsrOp (Label16 _) = True
+isJsrOp (AbsXInd _) = True -- but these can be labels!
+isJsrOp _ = False
+
+-- operand types for LDX
+isLoadXOp :: Operand -> Bool
+isLoadXOp (Imm8 _) = True
+isLoadXOp (Imm16 _) = True
+isLoadXOp (Abs _) = True
+isLoadXOp (AbsY _) = True
+isLoadXOp (Dir _) = True
+isLoadXOp (DirY _) = True
+isLoadXOp _ = False
+
+-- operand types for LDY
+isLoadYOp :: Operand -> Bool
+isLoadYOp (Imm8 _) = True
+isLoadYOp (Imm16 _) = True
+isLoadYOp (Abs _) = True
+isLoadYOp (AbsX _) = True
+isLoadYOp (Dir _) = True
+isLoadYOp (DirX _) = True
+isLoadYOp _ = False
+
+-- operand types for STX
+isStoreXOp :: Operand -> Bool
+isStoreXOp (Abs _) = True
+isStoreXOp (Dir _) = True
+isStoreXOp (DirY _) = True
+isStoreXOp _ = False
+
+-- operand types for STY
+isStoreYOp :: Operand -> Bool
+isStoreYOp (Abs _) = True
+isStoreYOp (Dir _) = True
+isStoreYOp (DirX _) = True
+isStoreYOp _ = False
+
+-- operand types for STZ
+isStoreZOp :: Operand -> Bool
+isStoreZOp (Abs _) = True
+isStoreZOp (AbsX _) = True
+isStoreZOp (Dir _) = True
+isStoreZOp (DirX _) = True
+isStoreZOp _ = False
+
 {-
 Addressing addressing modes:
 
@@ -327,3 +357,128 @@ which turns the various register-to-register transfer instructinos into MOVs:
 Is this worth it?
 
 -}
+instance Pretty Instruction where
+  pretty (ADC o) = indent 4 (group (pretty "ADC" <> pretty o))
+  pretty (SBC o) = indent 4 (group (pretty "SBC" <> pretty o))
+  pretty (CMP o) = indent 4 (group (pretty "CMP" <> pretty o))
+  pretty (CPX o) = indent 4 (group (pretty "CPX" <> pretty o))
+  pretty (CPY o) = indent 4 (group (pretty "CPY" <> pretty o))
+  pretty (DEC o) = indent 4 (group (pretty "DEC" <> pretty o))
+  pretty (DEX) = indent 4 (pretty "DEX")
+  pretty (DEY) = pretty "DEY"
+  pretty (INC o) = indent 4 (group (pretty "INC" <> pretty o))
+  pretty (INX) = indent 4 (pretty "INX")
+  pretty (INY) = indent 4 (pretty "INY")
+  pretty (AND o) = indent 4 (group (pretty "AND" <> pretty o))
+  pretty (EOR o) = indent 4 (group (pretty "EOR" <> pretty o))
+  pretty (ORA o) = indent 4 (group (pretty "ORA" <> pretty o))
+  pretty (BIT o) = indent 4 (group (pretty "BIT" <> pretty o))
+  pretty (TRB o) = indent 4 (group (pretty "TRB" <> pretty o))
+  pretty (TSB o) = indent 4 (group (pretty "TSB" <> pretty o))
+  pretty (ASL o) = indent 4 (group (pretty "ASL" <> pretty o))
+  pretty (LSR o) = indent 4 (group (pretty "LSR" <> pretty o))
+  pretty (ROL o) = indent 4 (group (pretty "ROL" <> pretty o))
+  pretty (ROR o) = indent 4 (group (pretty "ROR" <> pretty o))
+  pretty (BCC o) = indent 4 (group (pretty "BCC" <> pretty o))
+  pretty (BCS o) = indent 4 (group (pretty "BCS" <> pretty o))
+  pretty (BEQ o) = indent 4 (group (pretty "BEQ" <> pretty o))
+  pretty (BMI o) = indent 4 (group (pretty "BMI" <> pretty o))
+  pretty (BNE o) = indent 4 (group (pretty "BNE" <> pretty o))
+  pretty (BPL o) = indent 4 (group (pretty "BPL" <> pretty o))
+  pretty (BRA o) = indent 4 (group (pretty "BRA" <> pretty o))
+  pretty (BVC o) = indent 4 (group (pretty "BVC" <> pretty o))
+  pretty (BVS o) = indent 4 (group (pretty "BVS" <> pretty o))
+  pretty (BRL o) = indent 4 (group (pretty "BRL" <> pretty o))
+  pretty (JMP o) = indent 4 (group (pretty "JMP" <> pretty o))
+  pretty (JSL o) = indent 4 (group (pretty "JSL" <> pretty o))
+  pretty (JSR o) = indent 4 (group (pretty "JSR" <> pretty o))
+  pretty (RTL) = indent 4 (pretty "RTL")
+  pretty (RTS) = indent 4 (pretty "RTS")
+  pretty (BRK o) = indent 4 (group (pretty "BRK" <> pretty o))
+  pretty (COP o) = indent 4 (group (pretty "COP" <> pretty o))
+  pretty (RTI) = indent 4 (pretty "RTI")
+  pretty (CLC) = indent 4 (pretty "CLC")
+  pretty (CLD) = indent 4 (pretty "CLD")
+  pretty (CLI) = indent 4 (pretty "CLI")
+  pretty (CLV) = indent 4 (pretty "CLV")
+  pretty (SEC) = indent 4 (pretty "SEC")
+  pretty (SED) = indent 4 (pretty "SED")
+  pretty (SEI) = indent 4 (pretty "SEI")
+  pretty (REP o) = indent 4 (group (pretty "REP" <> pretty o))
+  pretty (SEP o) = indent 4 (group (pretty "SEP" <> pretty o))
+  pretty (LDA o) = indent 4 (group (pretty "LDA" <> pretty o))
+  pretty (LDX o) = indent 4 (group (pretty "LDX" <> pretty o))
+  pretty (LDY o) = indent 4 (group (pretty "LDY" <> pretty o))
+  pretty (STA o) = indent 4 (group (pretty "STA" <> pretty o))
+  pretty (STX o) = indent 4 (group (pretty "STX" <> pretty o))
+  pretty (STY o) = indent 4 (group (pretty "STY" <> pretty o))
+  pretty (STZ o) = indent 4 (group (pretty "STZ" <> pretty o))
+  pretty (MVN (Imm8 i1) (Imm8 i2)) =
+    indent 4 (group (pretty "MVN" <> pretty i1 <> pretty "," <> pretty i2))
+  pretty (MVP (Imm8 i1) (Imm8 i2)) =
+    indent 4 (group (pretty "MVP" <> pretty i1 <> pretty "," <> pretty i2))
+  pretty (NOP) = indent 4 (pretty "NOP")
+  pretty (WDM o) = indent 4 (group (pretty "WDM" <> pretty o))
+  pretty (PEA o) = indent 4 (group (pretty "PEA" <> pretty o))
+  pretty (PEI o) = indent 4 (group (pretty "PEI" <> pretty o))
+  pretty (PER o) = indent 4 (group (pretty "PER" <> pretty o))
+  pretty (PHA) = indent 4 (pretty "PHA")
+  pretty (PHX) = indent 4 (pretty "PHX")
+  pretty (PHY) = indent 4 (pretty "PHY")
+  pretty (PLA) = indent 4 (pretty "PLA")
+  pretty (PLX) = indent 4 (pretty "PLX")
+  pretty (PLY) = indent 4 (pretty "PLY")
+  pretty (PHB) = indent 4 (pretty "PHB")
+  pretty (PHD) = indent 4 (pretty "PHD")
+  pretty (PHK) = indent 4 (pretty "PHK")
+  pretty (PHP) = indent 4 (pretty "PHP")
+  pretty (PLB) = indent 4 (pretty "PLB")
+  pretty (PLD) = indent 4 (pretty "PLD")
+  pretty (PLP) = indent 4 (pretty "PLP")
+  pretty (STP) = indent 4 (pretty "STP")
+  pretty (WAI) = indent 4 (pretty "WAI")
+  pretty (TAX) = indent 4 (pretty "TAX")
+  pretty (TAY) = indent 4 (pretty "TAY")
+  pretty (TSX) = indent 4 (pretty "TSX")
+  pretty (TXA) = indent 4 (pretty "TXA")
+  pretty (TXS) = indent 4 (pretty "TXS")
+  pretty (TXY) = indent 4 (pretty "TXY")
+  pretty (TYA) = indent 4 (pretty "TYA")
+  pretty (TYX) = indent 4 (pretty "TYX")
+  pretty (TCD) = indent 4 (pretty "TCD")
+  pretty (TCS) = indent 4 (pretty "TCS")
+  pretty (TDC) = indent 4 (pretty "TDC")
+  pretty (TSC) = indent 4 (pretty "TSC")
+  pretty (XBA) = indent 4 (pretty "XBA")
+  pretty (XCE) = indent 4 (pretty "XCE")
+  pretty (Label s) = group (pretty s <> pretty ":")
+
+instance Pretty Operand where
+  pretty (Imm8 w) = pretty ".B" <+> pretty "#" <> pretty w
+  pretty (Imm16 w) = pretty ".W" <+> pretty "#" <> pretty w
+  pretty (Abs w) = pretty ".W" <+> pretty w
+  pretty (AbsX w) = pretty ".W" <+> pretty w <> pretty ",X"
+  pretty (AbsY w) = pretty ".W" <+> pretty w <> pretty ",Y"
+  pretty (Dir w) = pretty ".B" <+> pretty w
+  pretty (DirX w) = pretty ".B" <+> pretty w <> pretty ",X"
+  pretty (DirY w) = pretty ".B" <+> pretty w <> pretty ",Y"
+  pretty (Accumulator) = pretty "A"
+  pretty (DirInd w) = pretty ".B" <+> parens (pretty w)
+  pretty (Long w) = pretty ".L" <+> pretty w
+  pretty (LongX w) = pretty ".L" <+> pretty w <> pretty ",X"
+  pretty (DirIndLong w) = pretty ".B" <+> brackets (pretty w)
+  pretty (DirIndY w) = pretty ".B" <+> parens (pretty w) <> pretty ",Y"
+  pretty (DirXInd w) = pretty ".B" <+> parens (pretty w <> pretty ",X")
+  pretty (AbsInd w) = pretty ".W" <+> parens (pretty w)
+  pretty (AbsIndLong w) = pretty ".W" <+> brackets (pretty w)
+  pretty (AbsXInd w) = pretty ".W" <+> parens (pretty w <> pretty ",X")
+  pretty (DirIndLongY w) = pretty ".B" <+> brackets (pretty w) <> pretty ",Y"
+  pretty (Stack w) = pretty ".B" <+> pretty w <> pretty ",S"
+  pretty (StackIndY w) =
+    pretty ".B" <+> parens (pretty w <> pretty ",S") <> pretty ",Y"
+  pretty (Label8 s) = pretty ".B" <+> pretty s
+  pretty (Label16 s) = pretty ".W" <+> pretty s
+  pretty (Label24 s) = pretty ".L" <+> pretty s
+
+putDocCompact :: Doc a -> IO ()
+putDocCompact = renderIO System.IO.stdout . layoutCompact
