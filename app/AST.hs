@@ -5,16 +5,16 @@ type Id = String
 data Expr
   = ExprLit Int
   | ExprBlock [Var] [Expr]
-  | ExprIf Pred Expr Expr
-  | ExprFor Id Expr Expr Expr   -- not planned to be supported yet
+  | ExprVar Id
   | ExprAssign LVal Expr
+  | ExprArrIndex Expr Expr      -- not planned to be supported yet
   | ExprCall Id [Expr]          -- not planned to be supported yet
   | ExprMethodCall Id Id [Expr] -- not planned to be supported yet
+  | ExprIf Pred Expr Expr
   | ExprMatch Expr [Case]       -- not planned to be supported yet
+  | ExprFor Id Expr Expr Expr   -- not planned to be supported yet
   | ExprUnOp UnOp Expr
   | ExprBinOp BinOp Expr Expr
-  | ExprVar Id
-  | ExprArrIndex Expr Expr      -- not planned to be supported yet
   | ExprVoid
   deriving (Show)
 

@@ -1,0 +1,7 @@
+{
+  var x: bits[5] = 31
+  var y: bits[7] = extend[7](x)
+
+  x
+  y
+}

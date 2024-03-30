@@ -70,6 +70,7 @@ executable horace
     -- Other library packages from which modules are imported.
     build-depends:    base ^>=4.16.4.0
     build-depends:    array
+    build-depends:    mtl ^>=2.3.1
 
     -- Directories containing source files.
     hs-source-dirs:   app

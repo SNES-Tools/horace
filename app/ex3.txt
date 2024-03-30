@@ -1,4 +1,7 @@
 {
   var x: bits[5] = extend[5](5)
-  x + 2
+  if true then
+    x + extend[5](2)
+  else
+    shrink[5](500)
 }
