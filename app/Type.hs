@@ -81,7 +81,7 @@ lookupContext :: Context -> Id -> Result Type
 lookupContext c id =
   case lookup id c of
     Just t -> Right t
-    Nothing -> Left $ ["Lookup failed: ", show id]
+    Nothing -> Left ["Lookup failed: ", show id]
 
 typeof :: Expr -> Either String Type
 typeof e =
@@ -191,9 +191,7 @@ typeofExpr c (ExprBlock vs es) = do
   c' <- typeofVars c vs
   t <- foldM (const $ typeofExpr c') TypeVoid es
   return t
-typeofExpr c (ExprVar id) = do
-  t <- lookupContext c id
-  return t
+typeofExpr c (ExprVar id) = lookupContext c id
 typeofExpr c (ExprAssign (LValId id) e) = do
   t <- lookupContext c id
   t' <- typeofExpr c e
