@@ -357,6 +357,83 @@ which turns the various register-to-register transfer instructinos into MOVs:
 Is this worth it?
 
 -}
+sizeof :: Instruction -> Word
+sizeof (ADC o) = 1 + sizeofOperand o
+sizeof (SBC o) = 1 + sizeofOperand o
+sizeof (CMP o) = 1 + sizeofOperand o
+sizeof (CPX o) = 1 + sizeofOperand o
+sizeof (CPY o) = 1 + sizeofOperand o
+sizeof (DEC o) = 1 + sizeofOperand o
+sizeof (INC o) = 1 + sizeofOperand o
+sizeof (AND o) = 1 + sizeofOperand o
+sizeof (EOR o) = 1 + sizeofOperand o
+sizeof (ORA o) = 1 + sizeofOperand o
+sizeof (BIT o) = 1 + sizeofOperand o
+sizeof (TRB o) = 1 + sizeofOperand o
+sizeof (TSB o) = 1 + sizeofOperand o
+sizeof (ASL o) = 1 + sizeofOperand o
+sizeof (LSR o) = 1 + sizeofOperand o
+sizeof (ROL o) = 1 + sizeofOperand o
+sizeof (ROR o) = 1 + sizeofOperand o
+sizeof (BCC o) = 1 + sizeofOperand o
+sizeof (BCS o) = 1 + sizeofOperand o
+sizeof (BEQ o) = 1 + sizeofOperand o
+sizeof (BMI o) = 1 + sizeofOperand o
+sizeof (BNE o) = 1 + sizeofOperand o
+sizeof (BPL o) = 1 + sizeofOperand o
+sizeof (BRA o) = 1 + sizeofOperand o
+sizeof (BVC o) = 1 + sizeofOperand o
+sizeof (BVS o) = 1 + sizeofOperand o
+sizeof (BRL o) = 1 + sizeofOperand o
+sizeof (JMP o) = 1 + sizeofOperand o
+sizeof (JSL o) = 1 + sizeofOperand o
+sizeof (JSR o) = 1 + sizeofOperand o
+sizeof (BRK o) = 1 + sizeofOperand o
+sizeof (COP o) = 1 + sizeofOperand o
+sizeof (REP o) = 1 + sizeofOperand o
+sizeof (SEP o) = 1 + sizeofOperand o
+sizeof (LDA o) = 1 + sizeofOperand o
+sizeof (LDX o) = 1 + sizeofOperand o
+sizeof (LDY o) = 1 + sizeofOperand o
+sizeof (STA o) = 1 + sizeofOperand o
+sizeof (STX o) = 1 + sizeofOperand o
+sizeof (STY o) = 1 + sizeofOperand o
+sizeof (STZ o) = 1 + sizeofOperand o
+sizeof (MVN _ _) = 3
+sizeof (MVP _ _) = 3
+sizeof (WDM o) = 1 + sizeofOperand o
+sizeof (PEA o) = 1 + sizeofOperand o
+sizeof (PEI o) = 1 + sizeofOperand o
+sizeof (PER o) = 1 + sizeofOperand o
+sizeof (Label s) = 0
+sizeof _ = 1 -- all instructions without operands
+
+sizeofOperand :: Operand -> Word
+sizeofOperand (Imm8 w) = 1
+sizeofOperand (Imm16 w) = 2
+sizeofOperand (Abs w) = 2
+sizeofOperand (AbsX w) = 2
+sizeofOperand (AbsY w) = 2
+sizeofOperand (Dir w) = 1
+sizeofOperand (DirX w) = 1
+sizeofOperand (DirY w) = 1
+sizeofOperand (Accumulator) = 0
+sizeofOperand (DirInd w) = 1
+sizeofOperand (Long w) = 3
+sizeofOperand (LongX w) = 3
+sizeofOperand (DirIndLong w) = 1
+sizeofOperand (DirIndY w) = 1
+sizeofOperand (DirXInd w) = 1
+sizeofOperand (AbsInd w) = 2
+sizeofOperand (AbsIndLong w) = 2
+sizeofOperand (AbsXInd w) = 2
+sizeofOperand (DirIndLongY w) = 1
+sizeofOperand (Stack w) = 1
+sizeofOperand (StackIndY w) = 1
+sizeofOperand (Label8 s) = 1
+sizeofOperand (Label16 s) = 2
+sizeofOperand (Label24 s) = 3
+
 instance Pretty Instruction where
   pretty (ADC o) = indent 4 (group (pretty "ADC" <> pretty o))
   pretty (SBC o) = indent 4 (group (pretty "SBC" <> pretty o))

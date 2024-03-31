@@ -53,6 +53,9 @@ lookupOffset = lookupOffset' 0
 offset :: Type -> Word
 offset = const 2
 
+codeBlockSize :: [Instruction] -> Word
+codeBlockSize = sum . map sizeof
+
 newLabel :: IO String
 newLabel = do
   x <- newUnique
