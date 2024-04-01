@@ -14,15 +14,18 @@ codeGen = codeGenExpr []
 codeGenExpr :: Context -> Expr -> IO [Instruction]
 codeGenExpr ctx (ExprLit num) = return [LDA $ Imm16 (fromIntegral num)]
 codeGenExpr ctx (ExprBlock vars exprs) = do
-  vars <- codeGenVars ctx vars
-  case vars of
-    (ctx', code) ->
-      foldM
-        (\code expr -> do
-           code' <- codeGenExpr ctx' expr
-           return $ code ++ code')
-        code
-        exprs
+  vars' <- codeGenVars ctx vars
+  case vars' of
+    (ctx', varsCode) -> do
+      exprsCode <-
+        foldM
+          (\code expr -> do
+             code' <- codeGenExpr ctx' expr
+             return $ code ++ code')
+          []
+          exprs
+      let pullCode = replicate (length vars) PLA
+      return $ varsCode ++ exprsCode ++ pullCode
 codeGenExpr ctx (ExprVar id) = do
   let off = lookupOffset id ctx
   if off >= 256
