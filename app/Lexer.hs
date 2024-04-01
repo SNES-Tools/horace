@@ -76,6 +76,9 @@ lexVar cs =
     ("var", rest) -> TokenVar : lexer rest
     ("true", rest) -> TokenTrue : lexer rest
     ("false", rest) -> TokenFalse : lexer rest
+    ("and", rest) -> TokenAnd : lexer rest
+    ("or", rest) -> TokenOr : lexer rest
+    ("not", rest) -> TokenNot : lexer rest
     (id, rest) ->
       case rest of
         '(':rest -> TokenIdC id : lexer rest

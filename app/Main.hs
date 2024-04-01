@@ -12,8 +12,10 @@ import Prettyprinter
 
 main :: IO ()
 main = do
-  let prog = [TAX, ADC (Imm8 30)]
-  putDocCompact $ pretty prog
+--  let prog = [TAX, ADC (Imm8 30)]
+--  putDocCompact $ pretty prog
+  src <- getContents
+  testCode src
 --  line <- getContents
 --  let toks = lexer line
 
@@ -39,6 +41,7 @@ testCode str = do
   let ast = (parse . lexer) str
   code <- codeGen ast
   (putDocCompact . pretty) code
+  print $ codeBlockSize code
 
 {-
 repl :: IO ()

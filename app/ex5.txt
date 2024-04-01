@@ -1,0 +1,9 @@
+{
+  var x: bits[5] = 31
+  var y: bits[7] = 127
+
+  if true or false then
+    x
+  else
+    y
+}

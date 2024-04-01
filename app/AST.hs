@@ -98,7 +98,7 @@ data Type
   | TypeBits Word
   | TypeRange Int Int
   | TypeLit Word Int      -- for the type checker, not really part of the AST?
-  | TypeData Id
+  | TypeData Id           -- not implemented
   | TypeVoid              -- not implemented
 
 instance Show Type where
