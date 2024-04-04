@@ -1,0 +1,8 @@
+mode First {
+  state {
+    x: bits[8] = 255
+  }
+  main {
+    x
+  }
+}

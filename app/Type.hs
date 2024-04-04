@@ -69,30 +69,63 @@ instance Eq Type where
   TypeVoid == TypeVoid = True
   _ == _ = False
 
-type Context = [(Id, Type)]
+-- context stuff
+type Dict = [(Id, Type)]
 
-newContext :: Context
-newContext = []
+data Context =
+  Context Dict Dict Dict -- globals, states, locals
 
+stateToDict :: [MState] -> Dict
+stateToDict = map (\(MState id t _) -> (id, t))
+
+emptyContext :: Context
+emptyContext = Context [] [] []
+
+-- extends the context with a local variable
 extendContext :: Context -> Id -> Type -> Context
-extendContext c id t = (id, t) : c
+extendContext (Context gs ss ls) id t = Context gs ((id, t) : ss) ls
 
 lookupContext :: Context -> Id -> Result Type
-lookupContext c id =
-  case lookup id c of
+lookupContext (Context gs ss ls) id =
+  case lookup id gs of
     Just t -> Right t
-    Nothing -> Left ["Lookup failed: ", show id]
+    Nothing ->
+      case lookup id ss of
+        Just t -> Right t
+        Nothing ->
+          case lookup id ls of
+            Just t -> Right t
+            Nothing -> Left ["Lookup failed: ", show id]
 
-typeof :: Expr -> Either String Type
-typeof e =
-  case typeofExpr newContext e of
-    Left s -> Left $ "Type error: " ++ unwords s
-    Right t -> Right t
+-- type checker stuff
+typeCheck :: Mode -> ()
+typeCheck mode =
+  case typeCheckMode mode of
+    Left s -> error $ unwords s
+    Right _ -> ()
 
+typeCheckMode :: Mode -> Result ()
+typeCheckMode (Mode _ states main _) = do
+  _ <- typeCheckStates states
+  _ <- typeofExpr (Context [] (stateToDict states) []) main
+  return ()
+
+typeCheckStates :: [MState] -> Result ()
+typeCheckStates = foldM (const typeCheckState) ()
+
+-- TODO not checking if variable is previously defined
+typeCheckState :: MState -> Result ()
+typeCheckState (MState id t e) = do
+  t' <- typeofExpr emptyContext e -- constant context
+  if t == t'
+    then return ()
+    else typeError ["types not equal for assignment"]
+
+-- type error
 typeError :: [String] -> Either [String] a
 typeError = Left
 
---typeError = Left . unwords
+-- typeof things
 typeofExpr :: Context -> Expr -> Result Type
 typeofExpr _ (ExprLit i) = Right $ constantType i
 typeofExpr _ ExprVoid = Right TypeVoid

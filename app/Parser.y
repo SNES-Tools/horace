@@ -12,6 +12,10 @@ import Token
 %error { parseError }
 
 %token
+  mode  { TokenMode }
+  state { TokenState }
+  main  { TokenMain }
+  
   int   { TokenInt $$ }
   id    { TokenId $$ }
   idc   { TokenIdC $$ }
@@ -77,6 +81,17 @@ import Token
 %right '<-'
 
 %%
+
+mode_decl : mode id '{' state_decl main_decl '}'    { Mode $2 $4 $5 [] }
+
+state_decl : state '{' state_vars '}'   { $3 }
+
+state_vars :                            { [] }
+           | state_var state_vars       { $1 : $2 }
+
+state_var  : id ':' type_reg '=' expr   { MState $1 $3 $5 }
+
+main_decl  : main expr                  { $2 }
 
 expr  : int                             { ExprLit $1 }
       | '{' vars exprs '}'              { ExprBlock $2 $3 }

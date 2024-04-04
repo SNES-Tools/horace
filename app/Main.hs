@@ -14,18 +14,18 @@ main :: IO ()
 main = do
 --  let prog = [TAX, ADC (Imm8 30)]
 --  putDocCompact $ pretty prog
-  src <- getContents
-  testCode src
---  line <- getContents
---  let toks = lexer line
+--  src <- getContents
+--  testCode src
+  line <- getContents
+  let toks = lexer line
 
---  putStr "Tokens: "
---  print toks
+  putStr "Tokens: "
+  print toks
 
---  let ast = parse toks
+  let ast = parse toks
 
---  putStr "AST: "
---  print ast
+  putStr "AST: "
+  print ast
 
 --  case typeof ast of
 --    Left t -> do
@@ -36,12 +36,14 @@ main = do
 --  putStr "Eval: "
 --  (print . eval) ast
 
+{-
 testCode :: String -> IO ()
 testCode str = do
   let ast = (parse . lexer) str
   code <- codeGen ast
   (putDocCompact . pretty) code
   print $ codeBlockSize code
+-}
 
 {-
 repl :: IO ()

@@ -62,4 +62,8 @@ data Token
   | TokenRange
   | TokenData
   | TokenVoid
+  -- mode stuff
+  | TokenMode
+  | TokenState
+  | TokenMain
   deriving (Show)

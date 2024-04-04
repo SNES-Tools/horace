@@ -82,7 +82,7 @@ STATE_VARS ::= ""
              | STATE_VAR
              | STATE_VAR STATE_VARS
 
-STATE_VAR ::= ID: STATE_TYPE
+STATE_VAR ::= ID: STATE_TYPE = EXPR
 ```
 
 ### Expression declarations

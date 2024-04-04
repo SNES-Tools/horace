@@ -44,7 +44,7 @@ evalExpr expr@(ExprLit num) = return $ val
           (fromIntegral num)
       | num == 0 = ValBits 1 0
       | num < 0 = ValBits width ((fromIntegral num) `mod` (2 ^ width))
-    Right (TypeLit width _) = typeof expr
+    Right (TypeLit width _) = typeofExpr emptyContext expr
 evalExpr (ExprBlock vars exprs) = do
   evalVars vars
   foldM (const evalExpr) ValVoid exprs

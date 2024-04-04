@@ -20,11 +20,9 @@ lexer ('{':cs) = TokenLBrace : lexer cs
 lexer ('}':cs) = TokenRBrace : lexer cs
 lexer ('=':cs) = TokenEq : lexer cs
 lexer ('/':'=':cs) = TokenNeq : lexer cs
-
 lexer ('<':'-':cs) = TokenLArrow : lexer cs
 lexer ('<':'<':cs) = TokenLShift : lexer cs
 lexer ('>':'>':cs) = TokenRShift : lexer cs
-
 lexer ('<':'=':'$':cs) = TokenLeqS : lexer cs
 lexer ('<':'$':cs) = TokenLeS : lexer cs
 lexer ('>':'=':'$':cs) = TokenGeqS : lexer cs
@@ -33,7 +31,6 @@ lexer ('<':'=':cs) = TokenLeq : lexer cs
 lexer ('<':cs) = TokenLe : lexer cs
 lexer ('>':'=':cs) = TokenGeq : lexer cs
 lexer ('>':cs) = TokenGe : lexer cs
-
 lexer ('(':cs) = TokenLParen : lexer cs
 lexer (')':cs) = TokenRParen : lexer cs
 lexer ('[':cs) = TokenLBracket : lexer cs
@@ -79,6 +76,9 @@ lexVar cs =
     ("and", rest) -> TokenAnd : lexer rest
     ("or", rest) -> TokenOr : lexer rest
     ("not", rest) -> TokenNot : lexer rest
+    ("main", rest) -> TokenMain : lexer rest
+    ("state", rest) -> TokenState : lexer rest
+    ("mode", rest) -> TokenMode : lexer rest
     (id, rest) ->
       case rest of
         '(':rest -> TokenIdC id : lexer rest

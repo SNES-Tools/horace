@@ -2,6 +2,20 @@ module AST where
 
 type Id = String
 
+type Horace = [Mode]
+
+-- Mode stuff
+
+data Mode = Mode Id [MState] Expr [Func] deriving Show
+
+data MState = MState Id Type Expr deriving Show
+
+data Func = Func Id [Param] Type Expr deriving Show
+
+data Param = Id Type deriving Show
+
+-- Core Horace (Odes)
+
 type Prog = Expr
 
 data Expr
