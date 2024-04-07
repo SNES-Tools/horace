@@ -1,5 +1,7 @@
 module AST where
 
+import Type
+
 type Id = String
 
 type Horace = [Mode]
@@ -105,19 +107,3 @@ data CompOp
   | CompGeS
   | CompGeqS
   deriving (Show)
-
-data Type
-  = TypeArray Type Word   -- not implemented
-  | TypeSprite Id         -- not implemented
-  | TypeBits Word
-  | TypeRange Int Int
-  | TypeLit Word Int      -- for the type checker, not really part of the AST?
-  | TypeData Id           -- not implemented
-  | TypeVoid              -- not implemented
-
-instance Show Type where
-  show (TypeBits n) = "bits[" ++ show n ++ "]"
-  show (TypeRange l u) = "range[" ++ show l ++ "," ++ show u ++ "]"
-  show (TypeLit b r) =
-    "bits[" ++ show b ++ "] or range[" ++ show r ++ "," ++ show r ++ "]"
-  show TypeVoid = "void"

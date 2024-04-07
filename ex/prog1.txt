@@ -1,8 +1,9 @@
 mode First {
   state {
     x: bits[8] = 255
+    y: bits[6] = 63
   }
   main {
-    x
+    x + y + z
   }
 }

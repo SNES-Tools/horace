@@ -3,12 +3,13 @@ module Parser where
 
 import AST
 import Token
+import Type
 import qualified Data.Array as Happy_Data_Array
 import qualified Data.Bits as Bits
 import Control.Applicative(Applicative(..))
 import Control.Monad (ap)
 
--- parser produced by Happy Version 1.20.0
+-- parser produced by Happy Version 1.20.1.1
 
 data HappyAbsSyn t4 t5 t6 t7 t8 t9 t10 t11 t12 t13 t14 t15 t16 t17 t18 t19 t20 t21
 	= HappyTerminal (Token)

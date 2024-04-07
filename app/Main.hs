@@ -4,9 +4,9 @@ import System.IO
 
 import Parser
 import Lexer
-import Type
-import Eval
-import CodeGen
+import Typechecker
+--import Eval
+--import CodeGen
 import Instructions
 import Prettyprinter
 
@@ -26,6 +26,12 @@ main = do
 
   putStr "AST: "
   print ast
+
+  case typeCheck ast of
+    Just e -> putStrLn $ "Type error: " ++ e
+    Nothing -> putStrLn "Type checker OK"
+
+  return ()
 
 --  case typeof ast of
 --    Left t -> do

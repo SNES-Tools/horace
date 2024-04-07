@@ -4,6 +4,7 @@ module Parser where
 
 import AST
 import Token
+import Type
 
 }
 
