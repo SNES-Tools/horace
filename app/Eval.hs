@@ -1,7 +1,9 @@
 module Eval where
 
 import AST
+import Context
 import Type
+import Value
 
 import Data.Bits
 import Data.Maybe
@@ -9,31 +11,35 @@ import Data.Maybe
 import Control.Monad
 import Control.Monad.State
 
-data Value
-  = ValBits Word Word -- width, value
-  -- in invariant we will maintain is that all bits beyond the width in value
-  -- are all zero
-  | ValRange Int
-  | ValVoid
-  deriving (Show)
-
-type Env = [(Id, Value)]
-
 type Eval a = State Env a
 
-newEnv :: Env
-newEnv = []
+evalN :: Int -> Mode -> [Value]
+evalN num (Mode _ ms e _) =
+  let ctx = Context [] (mstateDict ms) []
+   in evalState (replicateM num $ evalExpr e) ctx
 
-replace :: (Eq a) => a -> b -> [(a, b)] -> [(a, b)]
-replace a b (x@(a', _):xs) =
-  if a == a'
-    then (a', b) : xs
-    else x : (replace a b xs)
-replace _ _ [] = undefined
+eval :: Mode -> Value
+eval (Mode _ ms e _) =
+  let ctx = Context [] (mstateDict ms) []
+   in evalState (evalExpr e) ctx
 
-eval :: Expr -> Value
-eval expr = evalState (evalExpr expr) newEnv
+-- states
+mstateDict :: [MState] -> [(Id, Value)]
+mstateDict ms =
+  let vs = map evalMState ms
+   in zip (map mstateId ms) vs
+  where
+    mstateId (MState id _ _) = id
 
+{-
+  evaluation of state initializers is in the empty context, i.e. state bindings
+  don't see the results of other bindings. (because it should be constantly
+  foldable)
+-}
+evalMState :: MState -> Value
+evalMState (MState id _ expr) = evalState (evalExpr expr) emptyContext
+
+-- expressions
 evalExpr :: Expr -> Eval Value
 evalExpr expr@(ExprLit num) = return $ val
   where
@@ -44,15 +50,15 @@ evalExpr expr@(ExprLit num) = return $ val
           (fromIntegral num)
       | num == 0 = ValBits 1 0
       | num < 0 = ValBits width ((fromIntegral num) `mod` (2 ^ width))
-    Right (TypeLit width _) = typeofExpr emptyContext expr
+    width = bitWidth num
 evalExpr (ExprBlock vars exprs) = do
   evalVars vars
   foldM (const evalExpr) ValVoid exprs
-evalExpr (ExprVar id) = gets $ (fromJust . lookup id)
+evalExpr (ExprVar id) = gets $ lookupContext' id
 -- type checker ensures variable lookup will always succeed
 evalExpr (ExprAssign (LValId id) expr) = do
   val <- evalExpr expr
-  modify $ replace id val
+  modify $ replaceContext id val
   return val
 -- do not match array index
 evalExpr (ExprIf pred expr1 expr2) = do
@@ -82,12 +88,12 @@ evalExpr (ExprUnOp (UnOpSignExtend (Just width')) expr) = do
         subtraction should be fine, since an invariant we maintain is that
         the width of all values least 1 (so we can get at least the 0th bit)
       -}
-        then return $
-             ValBits width' $
-             foldr
-               (.|.)
-               num
-               [bit (fromIntegral i) | i <- [width .. (width' - 1)]]
+        then return
+               $ ValBits width'
+               $ foldr
+                   (.|.)
+                   num
+                   [bit (fromIntegral i) | i <- [width .. (width' - 1)]]
         else return $ ValBits width' num
 evalExpr (ExprBinOp op expr1 expr2) = do
   val1 <- evalExpr expr1
@@ -116,7 +122,7 @@ evalVars = foldM (const evalVar) ()
 evalVar :: Var -> Eval ()
 evalVar (Var id _ expr) = do
   val <- evalExpr expr
-  modify $ (:) (id, val)
+  modify $ extendContext id val
 
 evalPred :: Pred -> Eval Bool
 evalPred (PredLit bool) = return bool
@@ -167,3 +173,15 @@ bitsToSigned (ValBits num val) =
   if testBit (fromIntegral val :: Int) ((fromIntegral num) - 1)
     then -2 ^ (num - 1) + (clearBit (fromIntegral val) (fromIntegral num - 1))
     else fromIntegral val
+
+bitWidth :: Int -> Word
+bitWidth i
+  | i > 0 =
+    let bits = ceiling $ logBase 2 $ (fromIntegral i) + 1
+     in constant bits
+  | i == 0 = constant minBits
+  | i < 0 =
+    let bits = ceiling $ logBase 2 $ (abs $ fromIntegral i) + 1
+     in constant bits
+  where
+    constant x = max x minBits

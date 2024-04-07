@@ -1,9 +1,9 @@
 mode First {
   state {
-    x: bits[8] = 255
+    x: bits[8] = 250
     y: bits[6] = 63
   }
   main {
-    x + y + z
+    x <- x + extend[8](1)
   }
 }

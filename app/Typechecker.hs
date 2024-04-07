@@ -38,7 +38,7 @@ typeCheckState (MState id t e) = do
 
 -- type checker for the core expression
 -- it is well-typed if we can find a type for it I think
-typeofExpr :: Context -> Expr -> Result Type
+typeofExpr :: TypeContext -> Expr -> Result Type
 typeofExpr _ (ExprLit i) = Right $ constantType i
 typeofExpr _ ExprVoid = Right TypeVoid
 typeofExpr c (ExprIf p e1 e2) = do
@@ -134,9 +134,9 @@ typeofExpr c (ExprBlock vs es) = do
   c' <- typeofVars c vs
   t <- foldM (const $ typeofExpr c') TypeVoid es
   return t
-typeofExpr c (ExprVar id) = lookupContext c id
+typeofExpr c (ExprVar id) = lookupContext id c
 typeofExpr c (ExprAssign (LValId id) e) = do
-  t <- lookupContext c id
+  t <- lookupContext id c
   t' <- typeofExpr c e
   if t == t'
     then return t
@@ -144,21 +144,21 @@ typeofExpr c (ExprAssign (LValId id) e) = do
 typeofExpr _ _ = Left ["feature is undefined"]
 
 -- this does not verify if the written type declaration is legal!
-typeofVars :: Context -> [Var] -> Result Context
+typeofVars :: TypeContext -> [Var] -> Result TypeContext
 typeofVars = foldM typeofVar
 
-typeofVar :: Context -> Var -> Result Context
+typeofVar :: TypeContext -> Var -> Result TypeContext
 typeofVar c (Var id t e) = do
   t' <- typeofExpr c e
-  case lookupContext c id of
+  case lookupContext id c of
     Left _ ->
       if t == t'
-        then return $ extendContext c id t
+        then return $ extendContext id t c
         else typeError ["types not equal for assignment"]
     Right _ -> typeError ["variable already in scope: ", id]
 
 -- predicates have no type, but is just a type-checker
-typeofPred :: Context -> Pred -> Result ()
+typeofPred :: TypeContext -> Pred -> Result ()
 typeofPred _ (PredLit _) = Right ()
 typeofPred c (PredUnOp _ p) = do
   _ <- typeofPred c p
@@ -206,7 +206,7 @@ constantType i
       let x' = max x minBits
        in TypeLit x' i
 
-bitwiseOpType :: Context -> Expr -> Expr -> Result Type
+bitwiseOpType :: TypeContext -> Expr -> Expr -> Result Type
 bitwiseOpType c e1 e2 = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
