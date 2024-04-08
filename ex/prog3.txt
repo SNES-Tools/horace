@@ -1,0 +1,7 @@
+mode Second {
+  state {
+  }
+  main {
+    x <- y + 1
+  }
+}

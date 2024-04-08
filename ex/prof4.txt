@@ -1,0 +1,12 @@
+mode First {
+  state {
+    count: bits[8] = extend[8](0)
+  }
+  main {
+    count <- count + extend[8](1)
+    if count & extend[8](1) = extend[8](0) then
+      20
+    else
+      extend[5](10)
+  }
+}

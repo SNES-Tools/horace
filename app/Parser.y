@@ -70,16 +70,16 @@ import Type
   '>$'  { TokenGeS }
   '>=$' { TokenGeqS }
 
-%right else do
-%left '.'
-%left '+' '-'
-%left '&'
-%left '^'
-%left '|'
-%right not
-%left and
-%left or
 %right '<-'
+%left or
+%left and
+%right not
+%left '|'
+%left '^'
+%left '&'
+%left '+' '-'
+%left '.'
+%right else do
 
 %%
 

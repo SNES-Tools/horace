@@ -1,6 +1,6 @@
 mode First {
   state {
-    x: bits[8] = 250
+    x: bits[8] = extend[8](0)
     y: bits[6] = 63
   }
   main {
