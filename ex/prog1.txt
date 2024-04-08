@@ -6,4 +6,9 @@ mode First {
   main {
     x <- x + extend[8](1)
   }
+  functions {
+    double(p: bits[8]): bits[8] {
+      x + p
+    }
+  }
 }

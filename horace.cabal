@@ -68,6 +68,7 @@ executable horace
                       Instructions
                       Lexer
                       Parser
+                      Result
                       Token
                       Type
                       Typechecker

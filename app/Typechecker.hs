@@ -1,40 +1,62 @@
 module Typechecker where
 
 import Control.Monad
+import Data.List
 
 import AST
 import Context
+import Result
 import Type
-
-type ErrorMessage = [String]
-
-type Result a = Either ErrorMessage a
 
 -- type checker stuff
 typeCheck :: Mode -> Maybe String
 typeCheck mode =
   case typeCheckMode mode of
-    Left s -> Just $ unwords s
+    Left s -> Just s
     Right _ -> Nothing
 
 -- type checker of mode
 typeCheckMode :: Mode -> Result ()
-typeCheckMode (Mode _ states main _) = do
+typeCheckMode (Mode _ states main funcs) = do
   _ <- typeCheckStates states
   _ <- typeofExpr (stateContext states) main
+  _ <- typeCheckFuncs (stateContext states) funcs
   return ()
 
 -- type checker of states
 typeCheckStates :: [MState] -> Result ()
-typeCheckStates = foldM (const typeCheckState) ()
+typeCheckStates ms = do
+  if length ids == (length . nub) ids
+    then foldM (const typeCheckState) () ms
+    else typeError ["duplicate identifiers in states"]
+  where
+    ids = map mstateId ms
+    mstateId (MState id _ _) = id
 
--- TODO not checking if variable is previously defined
 typeCheckState :: MState -> Result ()
 typeCheckState (MState id t e) = do
   t' <- typeofExpr emptyContext e -- constant context
-  if t == t'
-    then return ()
-    else typeError ["types not equal for assignment"]
+  if isValidStateType t
+    then if t == t'
+           then return ()
+           else typeError ["types not equal for assignment"]
+    else typeError ["not valid type for state"]
+
+-- type checker of functions
+typeCheckFuncs :: TypeContext -> [Func] -> Result ()
+typeCheckFuncs c fs =
+  if length ids == (length . nub) ids
+    then foldM (const $ typeCheckFunc c) () fs
+    else typeError ["duplicate function names"]
+  where
+    ids = map funcId fs
+    funcId (Func id _ _ _) = id
+
+typeCheckFunc :: TypeContext -> Func -> Result ()
+-- TODO check if a parameter is already a state variable
+typeCheckFunc c (Func id ps t e) = do
+  _ <- typeofExpr (setLocalContext ps c) e
+  return ()
 
 -- type checker for the core expression
 -- it is well-typed if we can find a type for it I think
@@ -99,8 +121,9 @@ typeofExpr c (ExprBinOp BinOpBitEor e1 e2) = bitwiseOpType c e1 e2
 typeofExpr c (ExprBinOp BinOpAdd e1 e2) = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
-  case (t1, t2) of
+  case (t1, t2)
     -- no handling of constant addition which is outside usual bounds!!
+        of
     (TypeLit _ i1, TypeLit _ i2) -> return $ constantType $ i1 + i2
     -- bit cases
     (TypeBits _, TypeBits _) -> bitwiseOpType c e1 e2
@@ -114,8 +137,9 @@ typeofExpr c (ExprBinOp BinOpAdd e1 e2) = do
 typeofExpr c (ExprBinOp BinOpSub e1 e2) = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
-  case (t1, t2) of
+  case (t1, t2)
     -- no handling of constant addition which is outside usual bounds!!
+        of
     (TypeLit _ i1, TypeLit _ i2) -> return $ constantType $ i1 - i2
     -- bit cases
     (TypeBits _, TypeBits _) -> bitwiseOpType c e1 e2
@@ -141,7 +165,7 @@ typeofExpr c (ExprAssign (LValId id) e) = do
   if t == t'
     then return t
     else typeError ["types not equal for assignment"]
-typeofExpr _ _ = Left ["feature is undefined"]
+typeofExpr _ _ = Left "feature is undefined"
 
 -- this does not verify if the written type declaration is legal!
 typeofVars :: TypeContext -> [Var] -> Result TypeContext
@@ -150,12 +174,14 @@ typeofVars = foldM typeofVar
 typeofVar :: TypeContext -> Var -> Result TypeContext
 typeofVar c (Var id t e) = do
   t' <- typeofExpr c e
-  case lookupContext id c of
-    Left _ ->
-      if t == t'
-        then return $ extendContext id t c
-        else typeError ["types not equal for assignment"]
-    Right _ -> typeError ["variable already in scope: ", id]
+  if isValidLocalType t
+    then case lookupContext id c of
+           Left _ ->
+             if t == t'
+               then return $ extendContext id t c
+               else typeError ["types not equal for assignment"]
+           Right _ -> typeError ["variable already in scope: ", id]
+    else typeError ["not a valid type for local variable"]
 
 -- predicates have no type, but is just a type-checker
 typeofPred :: TypeContext -> Pred -> Result ()
@@ -170,8 +196,9 @@ typeofPred c (PredBinOp _ p1 p2) = do
 typeofPred c (PredComp _ e1 e2) = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
-  case (t1, t2) of
+  case (t1, t2)
     -- comparisons of all integer literals is allowed? because it's obvious?
+        of
     (TypeLit _ i1, TypeLit _ i2) -> return ()
     -- bit cases
     (TypeBits b1, TypeBits b2) ->
@@ -230,7 +257,3 @@ bitwiseOpType c e1 e2 = do
   if l2 > u1 || l1 > u2
     then Nothing
     else Just (max l1 l2, min u1 u2)
-
--- type error
-typeError :: [String] -> Either [String] a
-typeError = Left

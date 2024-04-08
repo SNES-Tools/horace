@@ -79,6 +79,7 @@ lexVar cs =
     ("main", rest) -> TokenMain : lexer rest
     ("state", rest) -> TokenState : lexer rest
     ("mode", rest) -> TokenMode : lexer rest
+    ("functions", rest) -> TokenFunctions : lexer rest
     (id, rest) ->
       case rest of
         '(':rest -> TokenIdC id : lexer rest

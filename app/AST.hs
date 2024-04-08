@@ -14,7 +14,7 @@ data MState = MState Id Type Expr deriving Show
 
 data Func = Func Id [Param] Type Expr deriving Show
 
-data Param = Id Type deriving Show
+data Param = Param Id Type deriving Show
 
 -- Core Horace (Odes)
 

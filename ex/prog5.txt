@@ -1,0 +1,11 @@
+mode F {
+  state {
+    x: bits[5] = 16
+  }
+
+  main {
+    var x: bits[5] = 16
+  }
+
+  functions { }
+}

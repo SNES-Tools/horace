@@ -30,11 +30,17 @@ emptyContext = Context [] [] []
 extendContext :: Id -> a -> Context a -> Context a
 extendContext id x (Context gs ms ls) = Context gs ((id, x) : ms) ls
 
+setLocalContext :: [Param] -> TypeContext -> TypeContext
+setLocalContext ps (Context gs ms _) = Context gs ms ls
+  where
+    ls = map pair ps
+    pair (Param id t) = (id, t)
+
 {-
   If we assert that there are no duplicate keys in the three dictionaries, then
   it doesn't matter what order we check them.
 -}
-lookupContext :: Id -> Context a -> Either [String] a
+lookupContext :: Id -> Context a -> Either String a
 lookupContext id (Context gs ms ls) =
   case lookup id gs of
     Just x -> Right x
@@ -44,7 +50,7 @@ lookupContext id (Context gs ms ls) =
         Nothing ->
           case lookup id ls of
             Just x -> Right x
-            Nothing -> Left ["Lookup failed: ", show id]
+            Nothing -> Left $ "Lookup failed: " ++ show id
 
 lookupContext' :: Id -> Context a -> a
 lookupContext' id ctx =

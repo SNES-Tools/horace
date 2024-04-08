@@ -35,9 +35,15 @@ mstateDict ms =
   evaluation of state initializers is in the empty context, i.e. state bindings
   don't see the results of other bindings. (because it should be constantly
   foldable)
+
+  that is why it is a pure computation
 -}
 evalMState :: MState -> Value
 evalMState (MState id _ expr) = evalState (evalExpr expr) emptyContext
+
+-- could be inlined with call?
+--evalFunc :: Func -> Eval Value
+--evalFunc (Func id ps _ expr)
 
 -- expressions
 evalExpr :: Expr -> Eval Value

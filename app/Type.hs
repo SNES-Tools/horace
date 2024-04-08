@@ -52,15 +52,19 @@ instance Show Type where
   A syntactically-valid program may have illegal type declarations based on the
   parameters set above.
 -}
-verifyType :: Type -> Bool
-verifyType (TypeArray t l) = if verifyType t
-                               then l <? (minLength, maxLength)
-                               else False -- some idiomatic way to do this
-verifyType (TypeSprite _)  = True
-verifyType (TypeBits b)    = b <? (minBits, maxBits)
-verifyType (TypeRange l u) = (l, u) <:? maximalRange
-verifyType (TypeData _)    = True
-verifyType TypeVoid        = True
+isValidStateType :: Type -> Bool
+isValidStateType (TypeArray t l) = isValidLocalType t && l <? (minLength, maxLength)
+isValidStateType (TypeSprite _)  = True
+isValidStateType (TypeBits b)    = b <? (minBits, maxBits)
+isValidStateType (TypeRange l u) = (l, u) <:? maximalRange
+isValidStateType (TypeData _)    = True
+isValidStateType _               = False
+
+isValidLocalType :: Type -> Bool
+isValidLocalType (TypeBits b)    = b <? (minBits, maxBits)
+isValidLocalType (TypeRange l u) = (l, u) <:? maximalRange
+isValidLocalType (TypeData _)    = True
+isValidLocalType _               = False
 
 -- type possibility
 instance Eq Type where

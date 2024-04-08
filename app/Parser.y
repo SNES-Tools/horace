@@ -16,6 +16,7 @@ import Type
   mode  { TokenMode }
   state { TokenState }
   main  { TokenMain }
+  funcs { TokenFunctions }
   
   int   { TokenInt $$ }
   id    { TokenId $$ }
@@ -83,16 +84,30 @@ import Type
 
 %%
 
-mode_decl : mode id '{' state_decl main_decl '}'    { Mode $2 $4 $5 [] }
+mode_decl : mode id '{' state_decl main_decl func_decl '}'    { Mode $2 $4 $5 $6 }
 
 state_decl : state '{' state_vars '}'   { $3 }
 
 state_vars :                            { [] }
            | state_var state_vars       { $1 : $2 }
 
-state_var  : id ':' type_reg '=' expr   { MState $1 $3 $5 }
+state_var  : id ':' type_state '=' expr { MState $1 $3 $5 }
 
 main_decl  : main expr                  { $2 }
+
+func_decl : funcs '{' func_list '}'     { $3 }
+
+func_list :                             { [] }
+          | func func_list              { $1 : $2 }
+
+func  : id '(' params ')' ':' type_reg expr { Func $1 $3 $6 $7 }
+      | idc params ')' ':' type_reg expr    { Func $1 $2 $5 $6 }
+
+params :                                { [] }
+       | param                          { [$1] }
+       | param ',' params               { $1 : $3 }
+
+param : id ':' type_reg                 { Param $1 $3 }
 
 expr  : int                             { ExprLit $1 }
       | '{' vars exprs '}'              { ExprBlock $2 $3 }
@@ -160,6 +175,8 @@ comp : '='    { CompEq }
      | '>$'   { CompGeS }
      | '<=$'  { CompLeqS }
      | '>=$'  { CompGeqS }
+
+type_state : type_reg                 { $1 }
 
 type_reg : bits '[' int ']'           { TypeBits $ fromIntegral $3 }
          | range '[' int ',' int ']'  { TypeRange $3 $5 }
