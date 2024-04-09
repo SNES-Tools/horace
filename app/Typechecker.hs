@@ -19,8 +19,8 @@ typeCheck mode =
 typeCheckMode :: Mode -> Result ()
 typeCheckMode (Mode _ states main funcs) = do
   _ <- typeCheckStates states
-  _ <- typeofExpr (stateContext states) main
-  _ <- typeCheckFuncs (stateContext states) funcs
+  _ <- typeCheckFuncs funcs
+  _ <- typeofExpr (funcStateContext funcs states) main
   return ()
 
 -- type checker of states
@@ -43,20 +43,24 @@ typeCheckState (MState id t e) = do
     else typeError ["not valid type for state"]
 
 -- type checker of functions
-typeCheckFuncs :: TypeContext -> [Func] -> Result ()
-typeCheckFuncs c fs =
+typeCheckFuncs :: [Func] -> Result ()
+typeCheckFuncs fs =
   if length ids == (length . nub) ids
-    then foldM (const $ typeCheckFunc c) () fs
+    then foldM (const $ typeCheckFunc) () fs
     else typeError ["duplicate function names"]
   where
     ids = map funcId fs
     funcId (Func id _ _ _) = id
 
-typeCheckFunc :: TypeContext -> Func -> Result ()
+typeCheckFunc :: Func -> Result ()
 -- TODO check if a parameter is already a state variable
-typeCheckFunc c (Func id ps t e) = do
-  _ <- typeofExpr (setLocalContext ps c) e
-  return ()
+typeCheckFunc (Func id ps t e)
+  -- new change: functions evaluated in the empty context (no state!!)
+ = do
+  t' <- typeofExpr (setLocalContext ps emptyContext) e
+  if t == t'
+    then return ()
+    else typeError ["function", show id, "return type does not match"]
 
 -- type checker for the core expression
 -- it is well-typed if we can find a type for it I think
@@ -165,9 +169,18 @@ typeofExpr c (ExprAssign (LValId id) e) = do
   if t == t'
     then return t
     else typeError ["types not equal for assignment"]
+typeofExpr c (ExprCall id args) = do
+  ts <- mapM (typeofExpr c) args
+  -- first, check type of args is okay
+  f <- lookupFuncContext id c
+  case f of
+    (ps, t) ->
+      if ts == ps
+        then return t -- return type of function
+        else typeError ["function arguments do not match"]
+        -- may not match either in arity or mismatch in arg type
 typeofExpr _ _ = Left "feature is undefined"
 
--- this does not verify if the written type declaration is legal!
 typeofVars :: TypeContext -> [Var] -> Result TypeContext
 typeofVars = foldM typeofVar
 
