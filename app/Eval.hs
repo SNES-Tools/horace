@@ -14,22 +14,24 @@ import Control.Monad.State
 type Eval a = State Env a
 
 evalN :: Int -> Mode -> [Value]
-evalN num (Mode _ ms e _) =
-  let ctx = Context [] (mstateDict ms) []
+evalN num (Mode _ ms e fs) =
+  let ctx = Context (funcDict fs) (mstateDict ms) []
    in evalState (replicateM num $ evalExpr e) ctx
 
 eval :: Mode -> Value
-eval (Mode _ ms e _) =
-  let ctx = Context [] (mstateDict ms) []
-   in evalState (evalExpr e) ctx
+eval = head . evalN 1
 
 -- states
 mstateDict :: [MState] -> [(Id, Value)]
-mstateDict ms =
-  let vs = map evalMState ms
-   in zip (map mstateId ms) vs
+mstateDict ms = zip (map mstateId ms) vs
   where
+    vs = map evalMState ms
     mstateId (MState id _ _) = id
+
+funcDict :: [Func] -> [(Id, ([Id], Expr))]
+funcDict = map (\(Func id params _ expr) -> (id, (map idOfParam params, expr)))
+  where
+    idOfParam (Param id _) = id
 
 {-
   evaluation of state initializers is in the empty context, i.e. state bindings
@@ -44,7 +46,6 @@ evalMState (MState id _ expr) = evalState (evalExpr expr) emptyContext
 -- could be inlined with call?
 --evalFunc :: Func -> Eval Value
 --evalFunc (Func id ps _ expr)
-
 -- expressions
 evalExpr :: Expr -> Eval Value
 evalExpr expr@(ExprLit num) = return $ val
@@ -94,12 +95,12 @@ evalExpr (ExprUnOp (UnOpSignExtend (Just width')) expr) = do
         subtraction should be fine, since an invariant we maintain is that
         the width of all values least 1 (so we can get at least the 0th bit)
       -}
-        then return
-               $ ValBits width'
-               $ foldr
-                   (.|.)
-                   num
-                   [bit (fromIntegral i) | i <- [width .. (width' - 1)]]
+        then return $
+             ValBits width' $
+             foldr
+               (.|.)
+               num
+               [bit (fromIntegral i) | i <- [width .. (width' - 1)]]
         else return $ ValBits width' num
 evalExpr (ExprBinOp op expr1 expr2) = do
   val1 <- evalExpr expr1
@@ -120,6 +121,16 @@ evalExpr (ExprBinOp op expr1 expr2) = do
                 BinOpAdd -> (+)
                 BinOpSub -> (-)
 evalExpr ExprVoid = return ValVoid
+evalExpr (ExprCall f args) = do
+  argv <- mapM evalExpr args
+  -- pure computation of function!
+  ctx <- get
+  let func = lookupFuncContext' f ctx
+  case func of
+    (params, expr) -> do
+      let locals = zip params argv
+      let ctx' = Context [] [] locals
+      return $ evalState (evalExpr expr) ctx'
 evalExpr _ = undefined
 
 evalVars :: [Var] -> Eval ()

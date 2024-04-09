@@ -17,7 +17,7 @@ data Context a f =
 
 type TypeContext = Context Type ([Type], Type)
 
-type Env = Context Value () -- TODO placeholder
+type Env = Context Value ([Id], Expr)
 
 stateToDict :: [MState] -> TypeDict
 stateToDict = map (\(MState id t _) -> (id, t))
@@ -68,6 +68,13 @@ lookupFuncContext id (Context fs _ _) =
   case lookup id fs of
     Just x -> Right x
     Nothing -> Left $ "Lookup failed on function: " ++ show id
+
+lookupFuncContext' :: Id -> Context a f -> f
+lookupFuncContext' id (Context fs _ _) =
+  case lookup id fs of
+    Just f -> f
+    Nothing ->
+      error "Lookup of function failed. This should have been caught earlier."
 
 replaceContext :: Id -> a -> Context a f -> Context a f
 replaceContext id x (Context fs ms ls) =
