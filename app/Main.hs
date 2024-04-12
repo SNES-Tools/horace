@@ -31,7 +31,7 @@ main = do
     Just e  -> putStrLn $ "Type error: " ++ e
     Nothing -> do
                  putStrLn "Type checker OK"
-                 print $ evalN 10 ast
+                 print $ evalN 100 ast
 
   return ()
 

@@ -6,4 +6,8 @@ data Value
   -- are all zero
   | ValRange Int
   | ValVoid
-  deriving (Show)
+
+instance Show Value where
+  show (ValBits _ v) = show v
+  show (ValRange i) = show i
+  show ValVoid = "void"
