@@ -8,7 +8,11 @@ type Horace = [Mode]
 
 -- Mode stuff
 
-data Mode = Mode Id [MState] Expr [Func] deriving Show
+data Mode = Mode Id [UserType] [MState] Expr [Func] deriving Show
+
+data UserType = UserType Id [Variant] deriving Show
+
+data Variant = Variant Id [Type] deriving Show
 
 data MState = MState Id Type Expr deriving Show
 
@@ -26,7 +30,7 @@ data Expr
   | ExprVar Id
   | ExprAssign LVal Expr
   | ExprArrIndex Expr Expr      -- not planned to be supported yet
-  | ExprCall Id [Expr]          -- not planned to be supported yet
+  | ExprCall Id [Expr]
   | ExprMethodCall Id Id [Expr] -- not planned to be supported yet
   | ExprIf Pred Expr Expr
   | ExprMatch Expr [Case]       -- not planned to be supported yet

@@ -17,6 +17,7 @@ import Type
   state { TokenState }
   main  { TokenMain }
   funcs { TokenFunctions }
+  types { TokenTypes }
   
   int   { TokenInt $$ }
   id    { TokenId $$ }
@@ -84,7 +85,23 @@ import Type
 
 %%
 
-mode_decl : mode id '{' state_decl main_decl func_decl '}'    { Mode $2 $4 $5 $6 }
+mode_decl : mode id '{' types_decl state_decl main_decl func_decl '}'    { Mode $2 $4 $5 $6 $7 }
+
+types_decl : types '{' type_list '}'    { $3 }
+
+type_list  :                            { [] }
+           | type type_list             { $1 : $2 }
+
+type : id '{' type_cases '}'            { UserType $1 $3 }
+
+type_cases : type_case                  { [$1] }
+           | type_case ',' type_cases   { $1 : $3 }
+
+type_case  : id                         { Variant $1 [] }
+           | id '(' type_vars ')'       { Variant $1 $3 }
+
+type_vars  : type_reg                   { [$1] }
+           | type_reg ',' type_vars     { $1 : $3 }
 
 state_decl : state '{' state_vars '}'   { $3 }
 
@@ -180,7 +197,7 @@ type_state : type_reg                 { $1 }
 
 type_reg : bits '[' int ']'           { TypeBits $ fromIntegral $3 }
          | range '[' int ',' int ']'  { TypeRange $3 $5 }
-         | data id                    { TypeData $2 }
+         | data id                    { TypeUser $2 }
          | void                       { TypeVoid }
 
 {

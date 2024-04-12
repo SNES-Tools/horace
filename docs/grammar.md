@@ -61,7 +61,6 @@ TYPE_DECL_LIST ::= ""
                  | TYPE_DECL TYLE_DECL_LIST
 
 TYPE_DECL ::= ID { TYPE_CASES }
-            | ID [TYPE_VARS] { TYPE_CASES }
 
 TYPE_VARS ::= ID
             | ID, TYPE_VARS

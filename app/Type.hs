@@ -39,7 +39,7 @@ data Type
   | TypeBits Word
   | TypeRange Int Int
   | TypeLit Word Int      -- for the type checker, not really part of the AST?
-  | TypeData String       -- not implemented
+  | TypeUser String       -- not implemented
   | TypeVoid
 
 instance Show Type where
@@ -57,13 +57,13 @@ isValidStateType (TypeArray t l) = isValidLocalType t && l <? (minLength, maxLen
 isValidStateType (TypeSprite _)  = True
 isValidStateType (TypeBits b)    = b <? (minBits, maxBits)
 isValidStateType (TypeRange l u) = (l, u) <:? maximalRange
-isValidStateType (TypeData _)    = True
+isValidStateType (TypeUser _)    = True
 isValidStateType _               = False
 
 isValidLocalType :: Type -> Bool
 isValidLocalType (TypeBits b)    = b <? (minBits, maxBits)
 isValidLocalType (TypeRange l u) = (l, u) <:? maximalRange
-isValidLocalType (TypeData _)    = True
+isValidLocalType (TypeUser _)    = True
 isValidLocalType _               = False
 
 -- type possibility
@@ -77,7 +77,7 @@ instance Eq Type where
   (TypeRange l u) == (TypeLit _ v)     = l == v && u == v
   (TypeLit _ v)   == (TypeRange l u)   = l == v && u == v
   (TypeLit _ v)   == (TypeLit _ v')    = v == v'
-  (TypeData id)   == (TypeData id')    = id == id'
+  (TypeUser id)   == (TypeUser id')    = id == id'
   TypeVoid        == TypeVoid          = True
   _ == _ = False
 

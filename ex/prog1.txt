@@ -1,4 +1,10 @@
 mode First {
+  types {
+    MaybeInt {
+      Just (bits[8]),
+      Nothing
+    }
+  }
   state {
     x: bits[8] = extend[8](1)
     y: bits[6] = 63
@@ -8,7 +14,11 @@ mode First {
   }
   functions {
     double(p: bits[8]): bits[8] {
-      p + p
+      var q: bits[8] = p
+      p + q
+    }
+    triple(q: bits[8]): bits[8] {
+      q + q + q
     }
   }
 }

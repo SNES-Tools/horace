@@ -67,4 +67,5 @@ data Token
   | TokenState
   | TokenMain
   | TokenFunctions
+  | TokenTypes
   deriving (Show)
