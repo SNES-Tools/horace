@@ -82,6 +82,11 @@ lexVar cs =
     ("functions", rest) -> TokenFunctions : lexer rest
     ("types", rest) -> TokenTypes : lexer rest
     (id, rest) ->
-      case rest of
-        '(':rest -> TokenIdC id : lexer rest
-        _ -> TokenId id : lexer rest
+      if isUpper $ head id then
+        case rest of
+          '(':rest -> TokenCapIdC id : lexer rest
+          _ -> TokenCapId id : lexer rest
+      else
+        case rest of
+          '(':rest -> TokenIdC id : lexer rest
+          _ -> TokenId id : lexer rest

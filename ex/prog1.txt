@@ -1,7 +1,7 @@
 mode First {
   types {
     MaybeInt {
-      Just (bits[8]),
+      Just(bits[8]),
       Nothing
     }
   }
@@ -10,7 +10,7 @@ mode First {
     y: bits[6] = 63
   }
   main {
-    x <- double(x)
+    x <- triple(x)
   }
   functions {
     double(p: bits[8]): bits[8] {
@@ -18,7 +18,7 @@ mode First {
       p + q
     }
     triple(q: bits[8]): bits[8] {
-      q + q + q
+      double(q) + q
     }
   }
 }

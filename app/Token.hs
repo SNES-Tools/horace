@@ -4,6 +4,8 @@ data Token
   = TokenInt Int
   | TokenId String
   | TokenIdC String
+  | TokenCapId String
+  | TokenCapIdC String
   | TokenLBrace
   | TokenRBrace
   | TokenIf

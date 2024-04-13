@@ -125,11 +125,12 @@ evalExpr (ExprCall f args) = do
   argv <- mapM evalExpr args
   -- pure computation of function!
   ctx <- get
+  let Context funcs _ _ = ctx
   let func = lookupFuncContext' f ctx
   case func of
     (params, expr) -> do
       let locals = zip params argv
-      let ctx' = Context [] [] locals
+      let ctx' = Context funcs [] locals
       return $ evalState (evalExpr expr) ctx'
 evalExpr _ = undefined
 

@@ -46,6 +46,7 @@ instance Show Type where
   show (TypeBits n)    = "bits[" ++ show n ++ "]"
   show (TypeRange l u) = "range[" ++ show l ++ "," ++ show u ++ "]"
   show (TypeLit b r)   = "bits[" ++ show b ++ "] or range[" ++show r ++ "," ++ show r ++ "]"
+  show (TypeUser s)    = "data " ++ s
   show TypeVoid        = "void"
 
 {-

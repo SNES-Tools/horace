@@ -23,7 +23,10 @@ stateToDict :: [MState] -> TypeDict
 stateToDict = map (\(MState id t _) -> (id, t))
 
 funcsToDict :: [Func] -> FuncTypeDict
-funcsToDict = map (\(Func id ps t _) -> (id, (map (\(Param _ t) -> t) ps, t)))
+funcsToDict = map funcToPair
+
+funcToPair :: Func -> (Id, ([Type], Type))
+funcToPair (Func id ps t _) = (id, (map (\(Param _ t) -> t) ps, t))
 
 stateContext :: [MState] -> TypeContext
 stateContext ms = Context [] (stateToDict ms) []
@@ -34,15 +37,21 @@ funcStateContext fs ms = Context (funcsToDict fs) (stateToDict ms) []
 emptyContext :: Context a f
 emptyContext = Context [] [] []
 
--- extends the context with a local variable
-extendContext :: Id -> a -> Context a f -> Context a f
-extendContext id x (Context fs ms ls) = Context fs ((id, x) : ms) ls
-
+-- type context operators
 setLocalContext :: [Param] -> TypeContext -> TypeContext
 setLocalContext ps (Context fs ms _) = Context fs ms ls
   where
     ls = map pair ps
     pair (Param id t) = (id, t)
+
+extendFuncContext :: Func -> TypeContext -> TypeContext
+extendFuncContext f (Context fs ms ls) = Context fs' ms ls
+  where
+    fs' = (funcToPair f) : fs
+
+-- extends the context with a local variable
+extendContext :: Id -> a -> Context a f -> Context a f
+extendContext id x (Context fs ms ls) = Context fs ((id, x) : ms) ls
 
 {-
   If we assert that there are no duplicate keys in the three dictionaries, then

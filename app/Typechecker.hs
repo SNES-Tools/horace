@@ -46,20 +46,20 @@ typeCheckState (MState id t e) = do
 typeCheckFuncs :: [Func] -> Result ()
 typeCheckFuncs fs =
   if length ids == (length . nub) ids
-    then foldM (const $ typeCheckFunc) () fs
+    then do
+      _ <- foldM typeCheckFunc emptyContext fs
+      return ()
     else typeError ["duplicate function names"]
   where
     ids = map funcId fs
     funcId (Func id _ _ _) = id
 
-typeCheckFunc :: Func -> Result ()
+typeCheckFunc :: TypeContext -> Func -> Result TypeContext
 -- TODO check if a parameter is already a state variable
-typeCheckFunc (Func id ps t e)
-  -- new change: functions evaluated in the empty context (no state!!)
- = do
-  t' <- typeofExpr (setLocalContext ps emptyContext) e
+typeCheckFunc ctx f@(Func id ps t e) = do
+  t' <- typeofExpr (setLocalContext ps ctx) e
   if t == t'
-    then return ()
+    then return $ extendFuncContext f ctx
     else typeError ["function", show id, "return type does not match"]
 
 -- type checker for the core expression
