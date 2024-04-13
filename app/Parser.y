@@ -28,7 +28,6 @@ import Type
   var   { TokenVar }
   bits  { TokenBits }
   range { TokenRange }
-  data  { TokenData }
   void  { TokenVoid }
   if    { TokenIf }
   then  { TokenThen }
@@ -135,6 +134,7 @@ expr  : int                             { ExprLit $1 }
       | for id '=' expr to expr do expr { ExprFor $2 $4 $6 $8 }
       | lval '<-' expr                  { ExprAssign $1 $3 }
       | idc args ')'                    { ExprCall $1 $2 }
+      | Idc args ')'                    { ExprConstruct $1 $2 }
       | id '.' idc args ')'             { ExprMethodCall $1 $3 $4 }
       | match expr with '{' cases '}'   { ExprMatch $2 $5 }
       | trans '[' int ',' int ']' '(' expr ')'   { ExprUnOp (UnOpTransmute (Just (fromIntegral $3)) (Just (fromIntegral $5))) $8 }
@@ -200,7 +200,7 @@ type_state : type_reg                 { $1 }
 
 type_reg : bits '[' int ']'           { TypeBits $ fromIntegral $3 }
          | range '[' int ',' int ']'  { TypeRange $3 $5 }
-         | data id                    { TypeUser $2 }
+         | Id                         { TypeUser $1 }
          | void                       { TypeVoid }
 
 {

@@ -32,6 +32,7 @@ data Expr
   | ExprArrIndex Expr Expr      -- not planned to be supported yet
   | ExprCall Id [Expr]
   | ExprMethodCall Id Id [Expr] -- not planned to be supported yet
+  | ExprConstruct Id [Expr]
   | ExprIf Pred Expr Expr
   | ExprMatch Expr [Case]       -- not planned to be supported yet
   | ExprFor Id Expr Expr Expr   -- not planned to be supported yet
