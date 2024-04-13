@@ -8,7 +8,13 @@ type Horace = [Mode]
 
 -- Mode stuff
 
-data Mode = Mode Id [UserType] [MState] Expr [Func] deriving Show
+data Mode = Mode { name :: Id
+                 , types :: [UserType]
+                 , mstate :: [MState]
+                 , main :: Expr
+                 , funcs :: [Func]
+                 }
+            deriving Show
 
 data UserType = UserType Id [Variant] deriving Show
 

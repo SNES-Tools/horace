@@ -17,10 +17,10 @@ typeCheck mode =
 
 -- type checker of mode
 typeCheckMode :: Mode -> Result ()
-typeCheckMode (Mode _ _ states main funcs) = do
-  _ <- typeCheckStates states
-  _ <- typeCheckFuncs funcs
-  _ <- typeofExpr (funcStateContext funcs states) main
+typeCheckMode mode = do
+  _ <- typeCheckStates $ mstate mode
+  _ <- typeCheckFuncs $ funcs mode
+  _ <- typeofExpr (funcStateContext (funcs mode) (mstate mode)) (main mode)
   return ()
 
 -- type checker of states

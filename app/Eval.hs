@@ -14,9 +14,9 @@ import Control.Monad.State
 type Eval a = State Env a
 
 evalN :: Int -> Mode -> [Value]
-evalN num (Mode _ _ ms e fs) =
-  let ctx = Context (funcDict fs) (mstateDict ms) []
-   in evalState (replicateM num $ evalExpr e) ctx
+evalN num mode =
+  let ctx = Context (funcDict $ funcs mode) (mstateDict $ mstate mode) []
+   in evalState (replicateM num $ evalExpr (main mode)) ctx
 
 eval :: Mode -> Value
 eval = head . evalN 1
