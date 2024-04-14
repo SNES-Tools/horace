@@ -9,6 +9,7 @@ mode First {
     x: bits[8] = extend[8](1)
     y: bits[6] = 63
     z: MaybeInt = Just(5)
+    w: MaybeInt = z
   }
   main {
     x <- triple(x)

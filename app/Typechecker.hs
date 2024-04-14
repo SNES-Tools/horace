@@ -18,48 +18,44 @@ typeCheck mode =
 -- type checker of mode
 typeCheckMode :: Mode -> Result ()
 typeCheckMode mode = do
-  _ <- typeCheckStates $ mstate mode
-  _ <- typeCheckFuncs $ funcs mode
-  _ <- typeofExpr (funcStateContext (funcs mode) (mstate mode)) (main mode)
+  -- type check mode variables
+  let ctx = consContext consDict
+  ctx <- foldM typeCheckState ctx (modeVars mode)
+  -- type check functions
+  ctx <- foldM typeCheckFunc ctx (modeFuncs mode)
+  _ <- typeofExpr ctx (modeMain mode)
   return ()
-
--- type checker of states
-typeCheckStates :: [MState] -> Result ()
-typeCheckStates ms = do
-  if length ids == (length . nub) ids
-    then foldM (const typeCheckState) () ms
-    else typeError ["duplicate identifiers in states"]
   where
-    ids = map mstateId ms
-    mstateId (MState id _ _) = id
+    consDict =
+      concatMap
+        (\utype ->
+           map
+             (\cons ->
+                (consName cons, (consFields cons, TypeUser $ utypeName utype)))
+             (utypeCons utype))
+        (modeTypes mode)
 
-typeCheckState :: MState -> Result ()
-typeCheckState (MState id t e) = do
-  t' <- typeofExpr emptyContext e -- constant context
+typeCheckState :: TypeContext -> MState -> Result TypeContext
+typeCheckState ctx mvar = do
+  let id = mvarName mvar
+  let e = mvarInit mvar
+  let t = mvarType mvar
+  t' <- typeofExpr ctx e
   if isValidStateType t
     then if t == t'
-           then return ()
+           then return $ extendMVar (id, t) ctx
            else typeError ["types not equal for assignment"]
     else typeError ["not valid type for state"]
 
--- type checker of functions
-typeCheckFuncs :: [Func] -> Result ()
-typeCheckFuncs fs =
-  if length ids == (length . nub) ids
-    then do
-      _ <- foldM typeCheckFunc emptyContext fs
-      return ()
-    else typeError ["duplicate function names"]
-  where
-    ids = map funcId fs
-    funcId (Func id _ _ _) = id
-
 typeCheckFunc :: TypeContext -> Func -> Result TypeContext
--- TODO check if a parameter is already a state variable
-typeCheckFunc ctx f@(Func id ps t e) = do
-  t' <- typeofExpr (setLocalContext ps ctx) e
+typeCheckFunc ctx f = do
+  let id = funcName f
+  let ps = funcParams f
+  let t = funcType f
+  let e = funcBody f
+  t' <- typeofExpr (setLocals (zip (map paramName ps) (map paramType ps)) ctx) e
   if t == t'
-    then return $ extendFuncContext f ctx
+    then return $ extendFunc (id, (map paramType ps, t)) ctx
     else typeError ["function", show id, "return type does not match"]
 
 -- type checker for the core expression
@@ -125,9 +121,8 @@ typeofExpr c (ExprBinOp BinOpBitEor e1 e2) = bitwiseOpType c e1 e2
 typeofExpr c (ExprBinOp BinOpAdd e1 e2) = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
-  case (t1, t2)
+  case (t1, t2) of
     -- no handling of constant addition which is outside usual bounds!!
-        of
     (TypeLit _ i1, TypeLit _ i2) -> return $ constantType $ i1 + i2
     -- bit cases
     (TypeBits _, TypeBits _) -> bitwiseOpType c e1 e2
@@ -141,9 +136,8 @@ typeofExpr c (ExprBinOp BinOpAdd e1 e2) = do
 typeofExpr c (ExprBinOp BinOpSub e1 e2) = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
-  case (t1, t2)
+  case (t1, t2) of
     -- no handling of constant addition which is outside usual bounds!!
-        of
     (TypeLit _ i1, TypeLit _ i2) -> return $ constantType $ i1 - i2
     -- bit cases
     (TypeBits _, TypeBits _) -> bitwiseOpType c e1 e2
@@ -162,9 +156,15 @@ typeofExpr c (ExprBlock vs es) = do
   c' <- typeofVars c vs
   t <- foldM (const $ typeofExpr c') TypeVoid es
   return t
-typeofExpr c (ExprVar id) = lookupContext id c
+typeofExpr c (ExprVar id) =
+  case lookupVar id c of
+    Just t -> return t
+    Nothing -> typeError ["variable not found: ", id]
 typeofExpr c (ExprAssign (LValId id) e) = do
-  t <- lookupContext id c
+  t <-
+    case lookupVar id c of
+      Just t -> return t
+      Nothing -> typeError ["variable not found: ", id]
   t' <- typeofExpr c e
   if t == t'
     then return t
@@ -172,7 +172,10 @@ typeofExpr c (ExprAssign (LValId id) e) = do
 typeofExpr c (ExprCall id args) = do
   ts <- mapM (typeofExpr c) args
   -- first, check type of args is okay
-  f <- lookupFuncContext id c
+  f <-
+    case lookupFunc id c of
+      Just t -> return t
+      Nothing -> typeError ["function not found: ", id]
   case f of
     (ps, t) ->
       if ts == ps
@@ -188,12 +191,12 @@ typeofVar :: TypeContext -> Var -> Result TypeContext
 typeofVar c (Var id t e) = do
   t' <- typeofExpr c e
   if isValidLocalType t
-    then case lookupContext id c of
-           Left _ ->
+    then case lookupVar id c of
+           Just _ -> typeError ["variable already in scope: ", id]
+           Nothing ->
              if t == t'
-               then return $ extendContext id t c
+               then return $ extendLocal (id, t) c
                else typeError ["types not equal for assignment"]
-           Right _ -> typeError ["variable already in scope: ", id]
     else typeError ["not a valid type for local variable"]
 
 -- predicates have no type, but is just a type-checker
@@ -209,9 +212,8 @@ typeofPred c (PredBinOp _ p1 p2) = do
 typeofPred c (PredComp _ e1 e2) = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
-  case (t1, t2)
+  case (t1, t2) of
     -- comparisons of all integer literals is allowed? because it's obvious?
-        of
     (TypeLit _ i1, TypeLit _ i2) -> return ()
     -- bit cases
     (TypeBits b1, TypeBits b2) ->

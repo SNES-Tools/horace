@@ -39,7 +39,7 @@ data Type
   | TypeBits Word
   | TypeRange Int Int
   | TypeLit Word Int      -- for the type checker, not really part of the AST?
-  | TypeUser String       -- not implemented
+  | TypeUser String
   | TypeVoid
 
 instance Show Type where

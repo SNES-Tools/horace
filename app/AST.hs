@@ -8,23 +8,31 @@ type Horace = [Mode]
 
 -- Mode stuff
 
-data Mode = Mode { name :: Id
-                 , types :: [UserType]
-                 , mstate :: [MState]
-                 , main :: Expr
-                 , funcs :: [Func]
+data Mode = Mode { modeName :: Id
+                 , modeTypes :: [UserType]
+                 , modeVars :: [MState]
+                 , modeMain :: Expr
+                 , modeFuncs :: [Func]
                  }
             deriving Show
 
-data UserType = UserType Id [Variant] deriving Show
+data UserType = UserType { utypeName :: Id,
+                           utypeCons :: [Variant] } deriving Show
 
-data Variant = Variant Id [Type] deriving Show
+data Variant = Variant { consName :: Id,
+                         consFields :: [Type] } deriving Show
 
-data MState = MState Id Type Expr deriving Show
+data MState = MState { mvarName :: Id,
+                       mvarType :: Type,
+                       mvarInit :: Expr } deriving Show
 
-data Func = Func Id [Param] Type Expr deriving Show
+data Func = Func { funcName :: Id
+                 , funcParams :: [Param]
+                 , funcType :: Type
+                 , funcBody :: Expr } deriving Show
 
-data Param = Param Id Type deriving Show
+data Param = Param { paramName :: Id
+                   , paramType :: Type } deriving Show
 
 -- Core Horace (Odes)
 
