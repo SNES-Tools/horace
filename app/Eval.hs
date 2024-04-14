@@ -11,42 +11,30 @@ import Data.Maybe
 import Control.Monad
 import Control.Monad.State
 
-type Eval a = State Env a
+type Eval a = State EvalContext a
 
 evalN :: Int -> Mode -> [Value]
 evalN num mode =
-  let ctx = Context (funcDict $ funcs mode) (mstateDict $ mstate mode) []
-   in evalState (replicateM num $ evalExpr (main mode)) ctx
+  let ctx =
+        execState
+          (evalMStates $ modeVars mode)
+          (funcContext
+             $ map
+                 (\f -> (funcName f, (map paramName (funcParams f), funcBody f)))
+                 (modeFuncs mode))
+   in evalState (replicateM num $ evalExpr (modeMain mode)) ctx
 
 eval :: Mode -> Value
 eval = head . evalN 1
 
--- states
-mstateDict :: [MState] -> [(Id, Value)]
-mstateDict ms = zip (map mstateId ms) vs
-  where
-    vs = map evalMState ms
-    mstateId (MState id _ _) = id
+evalMStates :: [MState] -> Eval ()
+evalMStates = foldM (const evalMState) ()
 
-funcDict :: [Func] -> [(Id, ([Id], Expr))]
-funcDict = map (\(Func id params _ expr) -> (id, (map idOfParam params, expr)))
-  where
-    idOfParam (Param id _) = id
+evalMState :: MState -> Eval ()
+evalMState (MState id _ expr) = do
+  v <- evalExpr expr
+  modify $ extendMVar (id, v)
 
-{-
-  evaluation of state initializers is in the empty context, i.e. state bindings
-  don't see the results of other bindings. (because it should be constantly
-  foldable)
-
-  that is why it is a pure computation
--}
-evalMState :: MState -> Value
-evalMState (MState id _ expr) = evalState (evalExpr expr) emptyContext
-
--- could be inlined with call?
---evalFunc :: Func -> Eval Value
---evalFunc (Func id ps _ expr)
--- expressions
 evalExpr :: Expr -> Eval Value
 evalExpr expr@(ExprLit num) = return $ val
   where
@@ -61,11 +49,14 @@ evalExpr expr@(ExprLit num) = return $ val
 evalExpr (ExprBlock vars exprs) = do
   evalVars vars
   foldM (const evalExpr) ValVoid exprs
-evalExpr (ExprVar id) = gets $ lookupContext' id
+evalExpr (ExprVar id) = do
+  ctx <- get
+  let Just v = lookupVar id ctx
+  return v
 -- type checker ensures variable lookup will always succeed
 evalExpr (ExprAssign (LValId id) expr) = do
   val <- evalExpr expr
-  modify $ replaceContext id val
+  modify $ replaceVar id val
   return val
 -- do not match array index
 evalExpr (ExprIf pred expr1 expr2) = do
@@ -95,12 +86,12 @@ evalExpr (ExprUnOp (UnOpSignExtend (Just width')) expr) = do
         subtraction should be fine, since an invariant we maintain is that
         the width of all values least 1 (so we can get at least the 0th bit)
       -}
-        then return $
-             ValBits width' $
-             foldr
-               (.|.)
-               num
-               [bit (fromIntegral i) | i <- [width .. (width' - 1)]]
+        then return
+               $ ValBits width'
+               $ foldr
+                   (.|.)
+                   num
+                   [bit (fromIntegral i) | i <- [width .. (width' - 1)]]
         else return $ ValBits width' num
 evalExpr (ExprBinOp op expr1 expr2) = do
   val1 <- evalExpr expr1
@@ -123,15 +114,16 @@ evalExpr (ExprBinOp op expr1 expr2) = do
 evalExpr ExprVoid = return ValVoid
 evalExpr (ExprCall f args) = do
   argv <- mapM evalExpr args
-  -- pure computation of function!
   ctx <- get
-  let Context funcs _ _ = ctx
-  let func = lookupFuncContext' f ctx
-  case func of
-    (params, expr) -> do
-      let locals = zip params argv
-      let ctx' = Context funcs [] locals
-      return $ evalState (evalExpr expr) ctx'
+  let Just (params, expr) = lookupFunc f ctx
+  let locals = zip params argv
+  let ctx' = setLocals locals ctx
+  let (v, ctx'') = runState (evalExpr expr) ctx'
+  put $ setLocals (lvarDict ctx) ctx''
+  return v
+evalExpr (ExprConstruct id args) = do
+  argv <- mapM evalExpr args
+  return $ ValUser id argv
 evalExpr _ = undefined
 
 evalVars :: [Var] -> Eval ()
@@ -140,7 +132,7 @@ evalVars = foldM (const evalVar) ()
 evalVar :: Var -> Eval ()
 evalVar (Var id _ expr) = do
   val <- evalExpr expr
-  modify $ extendContext id val
+  modify $ extendMVar (id, val)
 
 evalPred :: Pred -> Eval Bool
 evalPred (PredLit bool) = return bool

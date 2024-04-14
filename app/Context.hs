@@ -18,7 +18,7 @@ data Context a f = Context
 -- Types for our use cases
 type TypeContext = Context Type ([Type], Type)
 
-type Env = Context Value ([Id], Expr)
+type EvalContext = Context Value ([Id], Expr)
 
 {-
 stateToDict :: [MState] -> TypeDict
@@ -48,6 +48,11 @@ emptyContext :: Context a f
 emptyContext =
   Context
     {funcDict = [], consDict = [], gvarDict = [], mvarDict = [], lvarDict = []}
+
+funcContext :: [(Id, f)] -> Context a f
+funcContext fs =
+  Context
+    {funcDict = fs, consDict = [], gvarDict = [], mvarDict = [], lvarDict = []}
 
 mvarContext :: [(Id, a)] -> Context a f
 mvarContext mvars =
@@ -102,20 +107,20 @@ extendLocal l (Context fs cs ts ms ls) = Context fs cs ts ms (l : ls)
 setLocals :: [(Id, a)] -> Context a f -> Context a f
 setLocals ls (Context fs cs ts ms _) = Context fs cs ts ms ls
 
-replace :: Id -> a -> Context a f -> Context a f
-replace id x (Context fs cs ts ms ls) =
-  case replace' id x ms of
+replaceVar :: Id -> a -> Context a f -> Context a f
+replaceVar id x (Context fs cs ts ms ls) =
+  case replace id x ms of
     Just ms' -> Context fs cs ts ms' ls
     Nothing ->
-      case replace' id x ls of
+      case replace id x ls of
         Just ls' -> Context fs cs ts ms ls'
         Nothing -> error "Replacement failed"
-  where
-    replace' :: (Eq a) => a -> b -> [(a, b)] -> Maybe [(a, b)]
-    replace' a b (x@(a', _):xs) = do
-      if a == a'
-        then return $ (a', b) : xs
-        else do
-          xs' <- replace' a b xs
-          return $ x : xs'
-    replace' _ _ [] = Nothing
+
+replace :: (Eq a) => a -> b -> [(a, b)] -> Maybe [(a, b)]
+replace a b (x@(a', _):xs) = do
+  if a == a'
+    then return $ (a', b) : xs
+    else do
+      xs' <- replace a b xs
+      return $ x : xs'
+replace _ _ [] = Nothing

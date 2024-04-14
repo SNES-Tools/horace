@@ -13,6 +13,7 @@ mode First {
   }
   main {
     x <- triple(x)
+    Just(x)
   }
   functions {
     double(p: bits[8]): bits[8] {

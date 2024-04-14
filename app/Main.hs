@@ -5,7 +5,7 @@ import System.IO
 import Parser
 import Lexer
 import Typechecker
---import Eval
+import Eval
 --import CodeGen
 import Instructions
 import Prettyprinter
@@ -31,7 +31,7 @@ main = do
     Just e  -> putStrLn $ "Type error: " ++ e
     Nothing -> do
                  putStrLn "Type checker OK"
---                 print $ evalN 100 ast
+                 print $ evalN 100 ast
 
   return ()
 
