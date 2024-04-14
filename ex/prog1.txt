@@ -8,7 +8,7 @@ mode First {
   state {
     x: bits[8] = extend[8](1)
     y: bits[6] = 63
-    z: MaybeInt = Just(5)
+    z: MaybeInt = Just(extend[8](5))
     w: MaybeInt = z
   }
   main {

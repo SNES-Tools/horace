@@ -182,6 +182,14 @@ typeofExpr c (ExprCall id args) = do
         then return t -- return type of function
         else typeError ["function arguments do not match"]
         -- may not match either in arity or mismatch in arg type
+typeofExpr ctx (ExprConstruct id es) = do
+  case lookupCons id ctx of
+    Just (ps, t) -> do
+      ts <- mapM (typeofExpr ctx) es
+      if ts == ps
+        then return t
+        else typeError ["constructor fields not matching"]
+    Nothing -> typeError ["constructor not found: ", id]
 typeofExpr _ _ = Left "feature is undefined"
 
 typeofVars :: TypeContext -> [Var] -> Result TypeContext

@@ -78,6 +78,9 @@ setLocalContext ps (Context fs ts ms _) = Context fs ts ms ls
     pair (Param id t) = (id, t)
 -}
 -- Context operators
+lookupCons :: Id -> Context a f -> Maybe f
+lookupCons id (Context {consDict = cs}) = lookup id cs
+
 lookupVar :: Id -> Context a f -> Maybe a
 lookupVar id (Context _ _ gs ms ls) = lookup id (ls ++ ms ++ gs)
 
