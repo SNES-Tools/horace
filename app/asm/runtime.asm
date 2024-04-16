@@ -27,7 +27,7 @@ ORG $00FFB0
     db    $00         ; EXPANSION RAM SIZE
     db    $00         ; SPECIAL VERSION (normally $00)
     db    $00         ; CARTRIDGE SUB-NUMBER (normally $00)
-    db    "HORACE TEST PROGRAM "    ; GAME TITLE (21 Bytes)
+    db    "HORACE TEST PROGRAM  "    ; GAME TITLE (21 Bytes)
           ;|-------------------|;
     db    $31         ; MAP MODE (fastrom, hirom)
     db    $00         ; CARTRIDGE TYPE (ROM only)
@@ -46,7 +46,7 @@ ORG $00FFE0
 
 ;;    INITIALIZATION ROUTINES
 
-ORG $C0FD60       ; bank 0 mirror starts at $008000
+ORG $C0FD50       ; bank 0 mirror starts at $008000
 I_RESET:
     SEI           ; set interrupt disable
     CLC           ; clear carry flag
@@ -77,7 +77,9 @@ F_RESET:
     STA.W NMITIMEN
     REP   #$20
 
--   JSL   main    ; COMPILED CODE: MAIN GAME LOOP
+-   REP   #$10
+    JSL   main    ; COMPILED CODE: MAIN GAME LOOP
+    SEP   #$10
 
     SEP   #$20
     LDA.B #$81
