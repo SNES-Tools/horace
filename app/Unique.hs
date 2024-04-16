@@ -1,15 +1,17 @@
-import Data.Unique
+module Unique where
 
-main = do
-  x <- gensym
-  print x
+import Control.Monad.State
 
-gensym :: IO String
+type Unique a = State Word a
+
+gensym :: Unique String
 gensym = do
-  x <- newUnique
-  return $ "label" ++ (show $ hashUnique x)
+  x <- get
+  put $ x + 1
+  return $ "label" ++ (show x)
 
-genstr :: String -> IO String
+genstr :: String -> Unique String
 genstr s = do
-  x <- newUnique
-  return $ s ++ (show $ hashUnique x)
+  x <- get
+  put $ x + 1
+  return $ s ++ (show x)

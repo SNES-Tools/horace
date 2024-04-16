@@ -1,77 +1,40 @@
 module Main where
 
+import System.Environment
 import System.IO
 
 import Parser
 import Lexer
 import Typechecker
 import Eval
---import CodeGen
+import CodeGen
+import Unique
 import Instructions
 import Prettyprinter
 
 main :: IO ()
 main = do
---  let prog = [TAX, ADC (Imm8 30)]
---  putDocCompact $ pretty prog
---  src <- getContents
---  testCode src
-  line <- getContents
-  let toks = lexer line
+  args <- getArgs
+  let file = args !! 0
+  handle <- openFile file ReadMode
+  contents <- hGetContents handle
 
-  putStr "Tokens: "
-  print toks
+--  line <- getContents
+  let toks = lexer contents
+
+--  putStr "Tokens: "
+--  print toks
 
   let ast = parse toks
 
-  putStr "AST: "
-  print ast
+--  putStr "AST: "
+--  print ast
 
   case typeCheck ast of
     Just e  -> putStrLn $ "Type error: " ++ e
     Nothing -> do
-                 putStrLn "Type checker OK"
-                 print $ evalN 100 ast
+--                 putStrLn "Type checker OK"
+--                 print $ evalN 100 ast
+                 mapM_ (print . pretty) (codeGen ast)
 
   return ()
-
---  case typeof ast of
---    Left t -> do
---                putStr "Type: "
---                print t
---    Right e -> print e
-
---  putStr "Eval: "
---  (print . eval) ast
-
-{-
-testCode :: String -> IO ()
-testCode str = do
-  let ast = (parse . lexer) str
-  code <- codeGen ast
-  (putDocCompact . pretty) code
-  print $ codeBlockSize code
--}
-
-{-
-repl :: IO ()
-repl = do
-  putStr "> "
-  hFlush stdout
-
-  line <- getLine
-  let toks = lexer line
-
-  putStr "Tokens: "
-  print toks
-
-  let ast = parse toks
-
-  putStr "AST: "
-  print ast
-
-  putStr "Type: "
-  typeof ast
-
-  repl
--}

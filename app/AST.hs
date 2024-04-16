@@ -4,8 +4,6 @@ import Type
 
 type Id = String
 
-type Horace = [Mode]
-
 -- Mode stuff
 
 data Mode = Mode { modeName :: Id

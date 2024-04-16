@@ -558,4 +558,4 @@ instance Pretty Operand where
   pretty (Label24 s) = pretty ".L" <+> pretty s
 
 putDocCompact :: Doc a -> IO ()
-putDocCompact = renderIO System.IO.stdout . layoutCompact
+putDocCompact = renderIO System.IO.stdout . layoutCompact . (fuse Deep)

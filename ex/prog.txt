@@ -1,0 +1,16 @@
+mode Test {
+  types { }
+  state { }
+  main {
+    var y: bits[8] = 250
+    {
+      var x: bits[8] = 255
+      x
+      y <- x
+      if x = y then 20 else 20
+    }
+    y
+    5
+  }
+  functions { }
+}

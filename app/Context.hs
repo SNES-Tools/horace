@@ -20,30 +20,8 @@ type TypeContext = Context Type ([Type], Type)
 
 type EvalContext = Context Value ([Id], Expr)
 
-{-
-stateToDict :: [MState] -> TypeDict
-stateToDict = map (\(MState id t _) -> (id, t))
+type CodeContext = Context Type ([Type], Type)  -- temporary
 
-funcsToDict :: [Func] -> FuncTypeDict
-funcsToDict = map funcToPair
-
-funcToPair :: Func -> (Id, ([Type], Type))
-funcToPair (Func id ps t _) = (id, (map (\(Param _ t) -> t) ps, t))
-
-stateContext :: [MState] -> TypeContext
-stateContext ms =
-  Context
-    {funcDict = [], typeDict = [], mstateDict = stateToDict ms, localDict = []}
-
-funcStateContext :: [Func] -> [MState] -> TypeContext
-funcStateContext fs ms =
-  Context
-    { funcDict = funcsToDict fs
-    , typeDict = []
-    , mstateDict = stateToDict ms
-    , localDict = []
-    }
--}
 emptyContext :: Context a f
 emptyContext =
   Context
