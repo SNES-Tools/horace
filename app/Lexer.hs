@@ -81,12 +81,15 @@ lexVar cs =
     ("mode", rest) -> TokenMode : lexer rest
     ("functions", rest) -> TokenFunctions : lexer rest
     ("types", rest) -> TokenTypes : lexer rest
+    ("r", '-':rest) -> TokenRInt (-(read num)) : lexer rest'
+      where (num, rest') = span isDigit rest
+    ("r", rest) -> TokenRInt (read num) : lexer rest'
+      where (num, rest') = span isDigit rest
     (id, rest) ->
-      if isUpper $ head id then
-        case rest of
-          '(':rest -> TokenCapIdC id : lexer rest
-          _ -> TokenCapId id : lexer rest
-      else
-        case rest of
-          '(':rest -> TokenIdC id : lexer rest
-          _ -> TokenId id : lexer rest
+      if isUpper $ head id
+        then case rest of
+               '(':rest -> TokenCapIdC id : lexer rest
+               _ -> TokenCapId id : lexer rest
+        else case rest of
+               '(':rest -> TokenIdC id : lexer rest
+               _ -> TokenId id : lexer rest

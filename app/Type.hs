@@ -38,14 +38,12 @@ data Type
   | TypeSprite String     -- not implemented
   | TypeBits Word
   | TypeRange Int Int
-  | TypeLit Word Int      -- for the type checker, not really part of the AST?
   | TypeUser String
   | TypeVoid
 
 instance Show Type where
   show (TypeBits n)    = "bits[" ++ show n ++ "]"
   show (TypeRange l u) = "range[" ++ show l ++ "," ++ show u ++ "]"
-  show (TypeLit b r)   = "bits[" ++ show b ++ "] or range[" ++show r ++ "," ++ show r ++ "]"
   show (TypeUser s)    = "data " ++ s
   show TypeVoid        = "void"
 
@@ -72,12 +70,7 @@ instance Eq Type where
   (TypeArray t w) == (TypeArray t' w') = t == t' && w == w'
   (TypeSprite id) == (TypeSprite id')  = id == id'
   (TypeBits w)    == (TypeBits w')     = w == w'
-  (TypeBits w)    == (TypeLit w' _)    = w == w'
-  (TypeLit w _)   == (TypeBits w')     = w == w'
   (TypeRange l u) == (TypeRange l' u') = l == l' && u == u'
-  (TypeRange l u) == (TypeLit _ v)     = l == v && u == v
-  (TypeLit _ v)   == (TypeRange l u)   = l == v && u == v
-  (TypeLit _ v)   == (TypeLit _ v')    = v == v'
   (TypeUser id)   == (TypeUser id')    = id == id'
   TypeVoid        == TypeVoid          = True
   _ == _ = False

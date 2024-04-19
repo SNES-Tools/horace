@@ -78,6 +78,7 @@ codeGenExpr ctx (ExprIf pred exprT exprF) = do
       , codeF
       , [Label labelEnd]
       ]
+codeGenExpr _ ExprVoid = return []
 
 codeGenPred :: CodeContext -> Pred -> String -> String -> Unique [Instruction]
 codeGenPred ctx (PredLit True) true _ = return [BRA (Label8 true)]

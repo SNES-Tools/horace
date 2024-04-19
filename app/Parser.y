@@ -20,6 +20,7 @@ import Type
   types { TokenTypes }
   
   int   { TokenInt $$ }
+  rint  { TokenRInt $$ }
   id    { TokenId $$ }
   idc   { TokenIdC $$ }
   Id    { TokenCapId $$ }
@@ -129,6 +130,7 @@ params :                                { [] }
 param : id ':' type_reg                 { Param $1 $3 }
 
 expr  : int                             { ExprLit $1 }
+      | rint                            { ExprRLit $1 }
       | '{' vars exprs '}'              { ExprBlock $2 $3 }
       | if pred then expr else expr     { ExprIf $2 $4 $6 }
       | for id '=' expr to expr do expr { ExprFor $2 $4 $6 $8 }

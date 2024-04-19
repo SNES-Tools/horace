@@ -2,6 +2,7 @@ module Token where
 
 data Token
   = TokenInt Int
+  | TokenRInt Int
   | TokenId String
   | TokenIdC String
   | TokenCapId String

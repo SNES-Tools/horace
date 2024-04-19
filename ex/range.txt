@@ -1,0 +1,12 @@
+mode Test {
+  types { }
+  state {
+    y: range[-100, 100] = transmute[-100,100](r50)
+  }
+  main {
+    y <- transmute[-100, 100](y + r1)
+  }
+  functions { }
+}
+
+

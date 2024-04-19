@@ -7,6 +7,7 @@ import Value
 
 import Data.Bits
 import Data.Maybe
+import Data.Ord
 
 import Control.Monad
 import Control.Monad.State
@@ -36,7 +37,7 @@ evalMState (MState id _ expr) = do
   modify $ extendMVar (id, v)
 
 evalExpr :: Expr -> Eval Value
-evalExpr expr@(ExprLit num) = return $ val
+evalExpr (ExprLit num) = return $ val
   where
     val
       | num > 0 =
@@ -46,6 +47,7 @@ evalExpr expr@(ExprLit num) = return $ val
       | num == 0 = ValBits 1 0
       | num < 0 = ValBits width ((fromIntegral num) `mod` (2 ^ width))
     width = bitWidth num
+evalExpr (ExprRLit num) = return $ ValRange num
 evalExpr (ExprBlock vars exprs) = do
   evalVars vars
   foldM (const evalExpr) ValVoid exprs
@@ -64,7 +66,10 @@ evalExpr (ExprIf pred expr1 expr2) = do
   if bool
     then evalExpr expr1
     else evalExpr expr2
-evalExpr (ExprUnOp (UnOpTransmute _ _) expr) = evalExpr expr
+evalExpr (ExprUnOp (UnOpTransmute (Just l) (Just u)) expr) = do
+  val <- evalExpr expr
+  let ValRange i = val
+  return $ ValRange $ clamp (l, u) i
 evalExpr (ExprUnOp (UnOpShrink (Just width')) expr) = do
   val <- evalExpr expr
   -- can't pattern match in monadic assignment?

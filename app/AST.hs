@@ -38,6 +38,7 @@ type Prog = Expr
 
 data Expr
   = ExprLit Int
+  | ExprRLit Int
   | ExprBlock [Var] [Expr]
   | ExprVar Id
   | ExprAssign LVal Expr

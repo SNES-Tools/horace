@@ -25,19 +25,19 @@ main = do
 --  line <- getContents
   let toks = lexer contents
 
---  putStr "Tokens: "
---  print toks
+  putStr "Tokens: "
+  print toks
 
   let ast = parse toks
 
---  putStr "AST: "
---  print ast
+  putStr "AST: "
+  print ast
 
   case typeCheck ast of
     Just e  -> putStrLn $ "Type error: " ++ e
     Nothing -> do
 --                 putStrLn "Type checker OK"
---                 print $ evalN 100 ast
+                 print $ evalN 100 ast
                  let lines = map (show . pretty) (codeGen ast)
                  output <- openFile "asm/prog.asm" WriteMode
                  forM_ lines (hPutStrLn output)

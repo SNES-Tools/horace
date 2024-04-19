@@ -1,8 +1,1 @@
-mode Second {
-  state {
-    x: bits[8] = extend[8](1)
-  }
-  main {
-    x <- x + x
-  }
-}
+r-50
