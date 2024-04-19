@@ -40,6 +40,18 @@ codeGenExpr ctx (ExprAssign (LValId id) expr) = do
   if off >= 256
     then error "stack offset of variable out of bounds"
     else return $ code ++ [STA $ Stack (fromIntegral off)]
+codeGenExpr ctx (ExprBinOp op expr1 expr2) = do
+  code1 <- codeGenExpr ctx expr1
+  code2 <- codeGenExpr (extendLocal ("", TypeBits 0) ctx) expr2
+    -- processor flags should reflect result of computation?
+  let opCode =
+        case op of
+          BinOpAdd -> [CLC, ADC (Stack 1), PLX]
+          BinOpSub -> [STA (Dir 0), PLA, SEC, SBC (Dir 0)]
+          BinOpBitAnd -> [AND (Stack 1), PLX]
+          BinOpBitOr -> [ORA (Stack 1), PLX]
+          BinOpBitEor -> [EOR (Stack 1), PLX]
+  return $ concat [code1, [PHA], code2, opCode]
 codeGenExpr ctx (ExprIf pred exprT exprF) = do
   labelT <- genstr "if_true"
   labelF <- genstr "if_false"
@@ -48,9 +60,15 @@ codeGenExpr ctx (ExprIf pred exprT exprF) = do
   codeT <- codeGenExpr ctx exprT
   codeF <- codeGenExpr ctx exprF
   return $
-    codePred ++
-    [Label labelT] ++
-    codeT ++ [BRA (Label8 labelEnd), Label labelF] ++ codeF ++ [Label labelEnd]
+    concat
+      [ codePred
+      , [Label labelT]
+      , codeT
+      , [BRA (Label8 labelEnd)]
+      , [Label labelF]
+      , codeF
+      , [Label labelEnd]
+      ]
 
 codeGenPred :: CodeContext -> Pred -> String -> String -> Unique [Instruction]
 codeGenPred ctx (PredLit True) true _ = return [BRA (Label8 true)]
@@ -93,11 +111,16 @@ codeGenPred ctx (PredComp op expr1 expr2) true false = do
           CompGeS -> [BEQ (Label8 false), BPL (Label8 true)]
           CompGeqS -> [BPL (Label8 true)]
   return $
-    code1 ++
-    [PHA] ++
-    code2 ++
-    [STA (Dir 0x00)] ++
-    [PLA] ++ [CMP (Dir 0x00)] ++ compare ++ [BRA (Label8 false)]
+    concat
+      [ code1
+      , [PHA]
+      , code2
+      , [STA (Dir 0x00)]
+      , [PLA]
+      , [CMP (Dir 0x00)]
+      , compare
+      , [BRA (Label8 false)]
+      ]
 
 codeGenVars :: CodeContext -> [Var] -> Unique (CodeContext, [Instruction])
 codeGenVars ctx = foldM codeGenVar (ctx, [])
