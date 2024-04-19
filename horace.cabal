@@ -84,6 +84,7 @@ executable horace
     build-depends:    array
     build-depends:    mtl
     build-depends:    prettyprinter
+    build-depends:    process
 
     -- Directories containing source files.
     hs-source-dirs:   app

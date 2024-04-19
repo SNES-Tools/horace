@@ -1,3 +1,4 @@
+main:
     LDA.W #250
     PHA
     LDA.W #255
@@ -23,3 +24,8 @@ if_end2:
     LDA.B 1,S
     LDA.W #5
     PLX
+    RTL
+init:
+    RTL
+vblank:
+    RTL

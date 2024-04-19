@@ -1,0 +1,1 @@
+asar --symbols=wla --define CODE_FILE=prog.asm runtime.asm prog.sfc

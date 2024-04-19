@@ -2,6 +2,7 @@ module Main where
 
 import Control.Monad
 
+import System.Process
 import System.Environment
 import System.IO
 
@@ -38,9 +39,11 @@ main = do
 --                 putStrLn "Type checker OK"
 --                 print $ evalN 100 ast
                  let lines = map (show . pretty) (codeGen ast)
-                 output <- openFile "a.out" WriteMode
+                 output <- openFile "asm/prog.asm" WriteMode
                  forM_ lines (hPutStrLn output)
                  hClose output
+
+                 callCommand "(cd asm && ./assemble)"
 
   hClose handle
   return ()

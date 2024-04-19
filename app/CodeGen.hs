@@ -10,7 +10,16 @@ import Type
 import Unique
 
 codeGen :: Mode -> [Instruction]
-codeGen mode = evalState (codeGenExpr emptyContext (modeMain mode)) 0
+codeGen mode =
+  concat
+    -- main
+    [ [Label "main"]
+    , evalState (codeGenExpr emptyContext (modeMain mode)) 0
+    , [RTL]
+    -- end main
+    , [Label "init", RTL]
+    , [Label "vblank", RTL]
+    ]
 
 codeGenExpr :: CodeContext -> Expr -> Unique [Instruction]
 codeGenExpr ctx (ExprLit num) = return [LDA $ Imm16 (fromIntegral num)]
