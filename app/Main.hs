@@ -1,5 +1,7 @@
 module Main where
 
+import Control.Monad
+
 import System.Environment
 import System.IO
 
@@ -35,6 +37,10 @@ main = do
     Nothing -> do
 --                 putStrLn "Type checker OK"
 --                 print $ evalN 100 ast
-                 mapM_ (print . pretty) (codeGen ast)
+                 let lines = map (show . pretty) (codeGen ast)
+                 output <- openFile "a.out" WriteMode
+                 forM_ lines (hPutStrLn output)
+                 hClose output
 
+  hClose handle
   return ()
