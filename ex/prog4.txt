@@ -1,0 +1,14 @@
+mode First {
+  types {
+  }
+  state {
+  }
+  main {
+    first(200, 250)
+  }
+  functions {
+    first(a: bits[8], b: bits[8]): bits[8] {
+      a
+    }
+  }
+}

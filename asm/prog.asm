@@ -1,18 +1,13 @@
-double:
-    LDA.B 4,S
-    PHA
+first:
     LDA.B 6,S
-    PHA
-    LDA.B 3,S
-    CLC
-    ADC.B 1,S
-    PLX
-    PLX
     RTL
 main:
-    LDA.W #255
+    LDA.W #200
     PHA
-    JSL.L double
+    LDA.W #250
+    PHA
+    JSL.L first
+    PLX
     PLX
     RTL
 init:

@@ -20,7 +20,7 @@ type TypeContext = Context Type ([Type], Type)
 
 type EvalContext = Context Value ([Id], Expr)
 
-type CodeContext = Context Type ([Type], Type)  -- temporary
+type CodeContext = Context Type ([Type], Type) -- temporary
 
 emptyContext :: Context a f
 emptyContext =
@@ -52,14 +52,6 @@ consContext cons =
     , lvarDict = []
     }
 
--- type context operators
-{-
-setLocalContext :: [Param] -> TypeContext -> TypeContext
-setLocalContext ps (Context fs ts ms _) = Context fs ts ms ls
-  where
-    ls = map pair ps
-    pair (Param id t) = (id, t)
--}
 -- Context operators
 lookupCons :: Id -> Context a f -> Maybe f
 lookupCons id (Context {consDict = cs}) = lookup id cs
@@ -93,6 +85,28 @@ replaceVar id x (Context fs cs ts ms ls) =
       case replace id x ls of
         Just ls' -> Context fs cs ts ms ls'
         Nothing -> error "Replacement failed"
+
+data LookupCG
+  = Absolute Word
+  | Local Word
+  deriving (Show)
+
+-- lookupCodeGen
+lookupCG :: Id -> CodeContext -> LookupCG
+lookupCG id ctx =
+  case lookupOff 1 id (lvarDict ctx) of
+    Just off -> Local off
+    Nothing ->
+      case lookupOff 0x10 id (mvarDict ctx) of
+      -- magic number
+        Just addr -> Absolute addr
+        Nothing -> error $ "lookupCG failed on " ++ id
+  where
+    lookupOff off key ((id, t):rest) =
+      if key == id
+        then Just off
+        else lookupOff (off + sizeofType t) key rest
+    lookupOff _ _ [] = Nothing
 
 replace :: (Eq a) => a -> b -> [(a, b)] -> Maybe [(a, b)]
 replace a b (x@(a', _):xs) = do

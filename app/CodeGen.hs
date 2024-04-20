@@ -14,15 +14,26 @@ codeGen mode = evalState (codeGenMode mode) 0
 
 codeGenMode :: Mode -> Unique [Instruction]
 codeGenMode mode = do
-  funcs <- codeGenFuncs emptyContext (modeFuncs mode)
-  main <- codeGenExpr emptyContext (modeMain mode)
+  let ctx =
+        Context
+          { funcDict = [] -- not okay but okay since no one actually looks stuff up here yet
+          , consDict = []
+          , gvarDict = []
+          , mvarDict = map (\(MState id t _) -> (id, t)) (modeVars mode)
+          , lvarDict = []
+          }
+  init <- codeGenMVars ctx (modeVars mode)
+  funcs <- codeGenFuncs ctx (modeFuncs mode)
+  main <- codeGenExpr ctx (modeMain mode)
   return
     $ concat
         [ funcs
         , [Label "main"]
         , main
         , [RTL]
-        , [Label "init", RTL]
+        , [Label "init"]
+        , init
+        , [RTL]
         , [Label "vblank", RTL]
         ]
 
@@ -43,7 +54,9 @@ codeGenFuncs ctx = foldM (codeGenFunc ctx) []
 codeGenFunc :: CodeContext -> [Instruction] -> Func -> Unique [Instruction]
 codeGenFunc ctx ins (Func name ps _ expr) = do
   let ctx' =
-        setLocals (("", TypeLongPtr) : (map (\(Param n t) -> (n, t)) ps)) ctx
+        setLocals
+          (("", TypeLongPtr) : (reverse $ map (\(Param n t) -> (n, t)) ps))
+          ctx
   body <- codeGenExpr ctx' expr
   return $ concat [ins, [Label name], body, [RTL]]
 
@@ -63,19 +76,16 @@ codeGenExpr ctx (ExprBlock vars exprs) = do
   -- potential danger: may clobber processor status flags
   let pullCode = replicate (length vars) PLX
   return $ varsCode ++ exprsCode ++ pullCode
-codeGenExpr ctx (ExprVar id) = do
-  let off = lookupOffset id ctx
-  -- assume its on the stack
-  if off >= 256
-    -- error here to preempt an assembler error, but why?
-    then error "stack offset of variable out of bounds"
-    else return [LDA $ Stack (fromIntegral off)]
+codeGenExpr ctx (ExprVar id) =
+  case lookupCG id ctx of
+    Absolute addr -> return [LDA $ Abs (fromIntegral addr)]
+    Local off -> return [LDA $ Stack (fromIntegral off)]
 codeGenExpr ctx (ExprAssign (LValId id) expr) = do
   code <- codeGenExpr ctx expr
-  let off = lookupOffset id ctx
-  if off >= 256
-    then error "stack offset of variable out of bounds"
-    else return $ code ++ [STA $ Stack (fromIntegral off)]
+  -- check to store in static area or stack
+  case lookupCG id ctx of
+    Absolute addr -> return $ code ++ [STA $ Abs (fromIntegral addr)]
+    Local off -> return $ code ++ [STA $ Stack (fromIntegral off)]
 codeGenExpr ctx (ExprBinOp op expr1 expr2) = do
   code1 <- codeGenExpr ctx expr1
   code2 <- codeGenExpr (extendLocal ("", TypeBits 0) ctx) expr2
@@ -168,6 +178,21 @@ codeGenPred ctx (PredComp op expr1 expr2) true false = do
         , [BRA (Label8 false)]
         ]
 
+codeGenMVars :: CodeContext -> [MState] -> Unique [Instruction]
+codeGenMVars ctx = foldM (codeGenMVar ctx) []
+
+codeGenMVar :: CodeContext -> [Instruction] -> MState -> Unique [Instruction]
+codeGenMVar ctx ins (MState id t e) = do
+  {-
+    we can have the whole context available to us, because valid uses were
+    already type checked
+
+    type info is also ignored, should not be that way!
+  -}
+  code <- codeGenExpr ctx e
+  let Absolute x = lookupCG id ctx
+  return $ concat [ins, code, [STA (Abs $ fromIntegral x)]]
+
 codeGenVars :: CodeContext -> [Var] -> Unique (CodeContext, [Instruction])
 codeGenVars ctx = foldM codeGenVar (ctx, [])
 
@@ -197,21 +222,6 @@ codeGenArg (ctx, ins) expr = do
   let code' = code ++ [PHA]
   let ctx' = extendLocal ("", TypeDummy) ctx
   return (ctx', ins ++ code')
-
-lookupOffset :: Id -> CodeContext -> Word
-lookupOffset id ctx = lookupOffset' 1 id (lvarDict ctx)
-  where
-    lookupOffset' off key ((id, t):ctx) =
-      if key == id
-        then off
-        else lookupOffset' (off + offset t) key ctx
-    lookupOffset' _ key [] = error key
-
--- Big TODO!
-offset :: Type -> Word
-offset TypeVoid = 0
-offset TypeLongPtr = 3
-offset _ = 2
 
 codeBlockSize :: [Instruction] -> Word
 codeBlockSize = sum . map sizeof

@@ -77,6 +77,12 @@ instance Eq Type where
   TypeVoid        == TypeVoid          = True
   _ == _ = False
 
+-- Big TODO!
+sizeofType :: Type -> Word
+sizeofType TypeVoid = 0
+sizeofType TypeLongPtr = 3
+sizeofType _ = 2
+
 (<?) :: (Integral a) => a -> (a, a) -> Bool
 n <? (l, u) = n >= l && n <= u
 

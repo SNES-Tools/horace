@@ -2,11 +2,11 @@ mode First {
   types {
   }
   state {
-    x: bits[5] = 31
+    x: bits[8] = 255
     y: bits[6] = 63
   }
   main {
-    double(255)
+    x <- double(x)
   }
   functions {
     double(p: bits[8]): bits[8] {
