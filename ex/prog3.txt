@@ -1,7 +1,17 @@
-mode Second {
+mode First {
+  types {
+  }
   state {
+    x: bits[5] = 31
+    y: bits[6] = 63
   }
   main {
-    x <- y + 1
+    double(255)
+  }
+  functions {
+    double(p: bits[8]): bits[8] {
+      var q: bits[8] = p
+      p + q
+    }
   }
 }

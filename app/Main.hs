@@ -40,6 +40,7 @@ main = do
                  print $ evalN 100 ast
                  let lines = map (show . pretty) (codeGen ast)
                  output <- openFile "asm/prog.asm" WriteMode
+                 forM_ lines putStrLn
                  forM_ lines (hPutStrLn output)
                  hClose output
 

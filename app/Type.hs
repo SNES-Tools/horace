@@ -40,6 +40,8 @@ data Type
   | TypeRange Int Int
   | TypeUser String
   | TypeVoid
+  | TypeLongPtr           -- internal to code generator
+  | TypeDummy             -- dummy
 
 instance Show Type where
   show (TypeBits n)    = "bits[" ++ show n ++ "]"

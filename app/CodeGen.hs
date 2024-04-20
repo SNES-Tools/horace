@@ -10,19 +10,46 @@ import Type
 import Unique
 
 codeGen :: Mode -> [Instruction]
-codeGen mode =
-  concat
-    -- main
-    [ [Label "main"]
-    , evalState (codeGenExpr emptyContext (modeMain mode)) 0
-    , [RTL]
-    -- end main
-    , [Label "init", RTL]
-    , [Label "vblank", RTL]
-    ]
+codeGen mode = evalState (codeGenMode mode) 0
+
+codeGenMode :: Mode -> Unique [Instruction]
+codeGenMode mode = do
+  funcs <- codeGenFuncs emptyContext (modeFuncs mode)
+  main <- codeGenExpr emptyContext (modeMain mode)
+  return
+    $ concat
+        [ funcs
+        , [Label "main"]
+        , main
+        , [RTL]
+        , [Label "init", RTL]
+        , [Label "vblank", RTL]
+        ]
+
+codeGenFuncs :: CodeContext -> [Func] -> Unique [Instruction]
+codeGenFuncs ctx = foldM (codeGenFunc ctx) []
+
+{-
+  Calling conventions for parameters:
+   - all arguments are passed on the stack
+   - arguments should be pushed left to right
+   - the return address (3 bytes) is above all arguments
+  So a call of f(1, 2, 3) would have stack
+   | rtl addr
+   | 3
+   | 2
+   | 1
+-}
+codeGenFunc :: CodeContext -> [Instruction] -> Func -> Unique [Instruction]
+codeGenFunc ctx ins (Func name ps _ expr) = do
+  let ctx' =
+        setLocals (("", TypeLongPtr) : (map (\(Param n t) -> (n, t)) ps)) ctx
+  body <- codeGenExpr ctx' expr
+  return $ concat [ins, [Label name], body, [RTL]]
 
 codeGenExpr :: CodeContext -> Expr -> Unique [Instruction]
 codeGenExpr ctx (ExprLit num) = return [LDA $ Imm16 (fromIntegral num)]
+codeGenExpr ctx (ExprRLit num) = return [LDA $ Imm16 (fromIntegral num)]
 codeGenExpr ctx (ExprBlock vars exprs) = do
   vars' <- codeGenVars ctx vars
   let (ctx', varsCode) = vars'
@@ -68,17 +95,26 @@ codeGenExpr ctx (ExprIf pred exprT exprF) = do
   codePred <- codeGenPred ctx pred labelT labelF
   codeT <- codeGenExpr ctx exprT
   codeF <- codeGenExpr ctx exprF
-  return $
-    concat
-      [ codePred
-      , [Label labelT]
-      , codeT
-      , [BRA (Label8 labelEnd)]
-      , [Label labelF]
-      , codeF
-      , [Label labelEnd]
-      ]
+  return
+    $ concat
+        [ codePred
+        , [Label labelT]
+        , codeT
+        , [BRA (Label8 labelEnd)]
+        , [Label labelF]
+        , codeF
+        , [Label labelEnd]
+        ]
+codeGenExpr ctx (ExprCall f exprs) = do
+  args <- codeGenArgs ctx exprs
+  return
+    $ concat
+        [ args
+        , [JSL (Label24 f)]
+        , replicate (length exprs) PLX -- clobbers P
+        ]
 codeGenExpr _ ExprVoid = return []
+codeGenExpr _ e = error $ show e
 
 codeGenPred :: CodeContext -> Pred -> String -> String -> Unique [Instruction]
 codeGenPred ctx (PredLit True) true _ = return [BRA (Label8 true)]
@@ -120,17 +156,17 @@ codeGenPred ctx (PredComp op expr1 expr2) true false = do
           CompLeqS -> [BMI (Label8 true), BEQ (Label8 true)]
           CompGeS -> [BEQ (Label8 false), BPL (Label8 true)]
           CompGeqS -> [BPL (Label8 true)]
-  return $
-    concat
-      [ code1
-      , [PHA]
-      , code2
-      , [STA (Dir 0x00)]
-      , [PLA]
-      , [CMP (Dir 0x00)]
-      , compare
-      , [BRA (Label8 false)]
-      ]
+  return
+    $ concat
+        [ code1
+        , [PHA]
+        , code2
+        , [STA (Dir 0x00)]
+        , [PLA]
+        , [CMP (Dir 0x00)]
+        , compare
+        , [BRA (Label8 false)]
+        ]
 
 codeGenVars :: CodeContext -> [Var] -> Unique (CodeContext, [Instruction])
 codeGenVars ctx = foldM codeGenVar (ctx, [])
@@ -143,6 +179,25 @@ codeGenVar (ctx, ins) (Var id typ expr) = do
   let ctx' = extendLocal (id, typ) ctx
   return (ctx', ins ++ code')
 
+codeGenArgs :: CodeContext -> [Expr] -> Unique [Instruction]
+codeGenArgs ctx exprs = do
+  res <- foldM codeGenArg (ctx, []) exprs
+  return $ snd res
+
+-- similar, except pushed args are not in scope for evaluating later args
+codeGenArg ::
+     (CodeContext, [Instruction]) -> Expr -> Unique (CodeContext, [Instruction])
+codeGenArg (ctx, ins) expr = do
+  code <- codeGenExpr ctx expr
+  {-
+    proper pushing depends what the type of the parameter is. however we assume
+    it's all 2 at the moment. if we were to have the types available, we would
+    need to first do a function lookup to get the types of the arguments
+  -}
+  let code' = code ++ [PHA]
+  let ctx' = extendLocal ("", TypeDummy) ctx
+  return (ctx', ins ++ code')
+
 lookupOffset :: Id -> CodeContext -> Word
 lookupOffset id ctx = lookupOffset' 1 id (lvarDict ctx)
   where
@@ -150,10 +205,12 @@ lookupOffset id ctx = lookupOffset' 1 id (lvarDict ctx)
       if key == id
         then off
         else lookupOffset' (off + offset t) key ctx
+    lookupOffset' _ key [] = error key
 
 -- Big TODO!
 offset :: Type -> Word
 offset TypeVoid = 0
+offset TypeLongPtr = 3
 offset _ = 2
 
 codeBlockSize :: [Instruction] -> Word
