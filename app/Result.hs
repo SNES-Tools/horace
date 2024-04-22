@@ -7,3 +7,6 @@ type Result a = Either ErrorMessage a
 -- type error
 typeError :: [String] -> Result a
 typeError = Left . unwords
+
+fromResult :: Result a -> a
+fromResult (Right x) = x

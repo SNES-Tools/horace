@@ -8,6 +8,7 @@ import Data.Bits
 import AST
 import Context
 import Instructions
+import Result
 import Type
 import Typechecker
 import Unique
@@ -190,7 +191,33 @@ codeGenExpr ctx (ExprCall f exprs) = do
       , [JSL (Label24 f)]
       , replicate (length exprs) PLX -- clobbers P
       ]
-codeGenExpr ctx (ExprConstruct id exprs) = undefined
+-- assuming that all constructs will be on the heap, and not in the registers...
+codeGenExpr ctx (ExprConstruct id exprs) = do
+  let Just (_, TypeVariant tag) = lookupCons id ctx
+  code <- codeGenFields ctx exprs
+  return $
+    concat
+      [ [LDA (Dir 10)]
+      , [TAX]
+      , [CLC]
+      , [ ADC
+            (Imm16 $
+             1 +
+             (sum $
+              map
+                (fromIntegral . sizeofType . fromResult . typeofExpr ctx)
+                exprs))
+        ]
+      , [STA (Dir 10)]
+      , [SEP (Imm8 0x20)]
+      , [LDA (Imm8 $ fromIntegral tag)]
+      , [STA (LongX 0x7F0000)]
+      , [REP (Imm8 0x20)]
+      , [PHX] -- immediate push then pull: not always a no-op? (status flags)
+      , code
+      , [PLX]
+      , [TXA]
+      ]
 codeGenExpr _ ExprVoid = return []
 codeGenExpr _ e = error $ show e
 
@@ -291,6 +318,24 @@ codeGenArg (ctx, ins) expr = do
   let code' = code ++ [PHA]
   let ctx' = extendLocal ("", TypeDummy) ctx
   return (ctx', ins ++ code')
+
+codeGenFields :: CodeContext -> [Expr] -> Unique [Instruction]
+codeGenFields ctx exprs = do
+  res <- foldM (codeGenField ctx) (0x7F0001, []) exprs
+  return $ snd res
+
+codeGenField ::
+     CodeContext
+  -> (Word, [Instruction])
+  -> Expr
+  -> Unique (Word, [Instruction])
+codeGenField ctx (addr, ins) expr = do
+  let ctx' = extendLocal ("", TypeDummy) ctx
+  let size = sizeofType $ fromResult $ typeofExpr ctx expr
+  code <- codeGenExpr ctx' expr
+  return $
+    ( addr + size
+    , concat [ins, code, [PLX], [STA (LongX $ fromIntegral addr)], [PHX]])
 
 codeBlockSize :: [Instruction] -> Word
 codeBlockSize = sum . map sizeof
