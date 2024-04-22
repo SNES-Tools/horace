@@ -3,6 +3,8 @@ module CodeGen where
 import Control.Monad
 import Control.Monad.State
 
+import Data.Bits
+
 import AST
 import Context
 import Instructions
@@ -104,9 +106,29 @@ codeGenExpr ctx (ExprUnOp (UnOpTransmute (Just l) (Just u)) expr) = do
         , [Label clampBot, LDA (Imm16 $ fromIntegral l)]
         , [Label end]
         ]
---codeGenExpr ctx (ExprUnOp op expr) = do
---  code <- codeGenExpr ctx expr
---  let t = 
+codeGenExpr ctx (ExprUnOp (UnOpShrink (Just b)) expr) = do
+  code <- codeGenExpr ctx expr
+  let mask = foldl setBit 0 [0 .. (fromIntegral $ b - 1)]
+  return $ concat [code, [AND (Imm16 mask)]]
+codeGenExpr ctx (ExprUnOp (UnOpExtend _) expr) = do
+  code <- codeGenExpr ctx expr
+  let Right (TypeBits b) = typeofExpr ctx expr
+  let mask = foldl setBit 0 [0 .. (fromIntegral $ b - 1)]
+  return $ concat [code, [AND (Imm16 mask)]]
+codeGenExpr ctx (ExprUnOp (UnOpSignExtend (Just b')) expr) = do
+  code <- codeGenExpr ctx expr
+  let Right (TypeBits b) = typeofExpr ctx expr
+  let testMask = bit $ fromIntegral $ b - 1
+  let trueMask = foldl setBit 0 [fromIntegral b .. (fromIntegral $ b' - 1)]
+  end <- genstr "sign_extend"
+  return
+    $ concat
+        [ code
+        , [BIT (Imm16 testMask)]
+        , [BEQ (Label8 end)]
+        , [ORA (Imm16 trueMask)]
+        , [Label end]
+        ]
 codeGenExpr ctx (ExprBinOp op expr1 expr2) = do
   code1 <- codeGenExpr ctx expr1
   code2 <- codeGenExpr (extendLocal ("", TypeBits 0) ctx) expr2

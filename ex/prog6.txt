@@ -1,0 +1,11 @@
+mode First {
+  types {
+  }
+  state {
+  }
+  main {
+    sign-extend[15](0)
+  }
+  functions {
+  }
+}
