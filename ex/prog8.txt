@@ -1,0 +1,15 @@
+mode First {
+  types {
+  }
+  state {
+  }
+  main {
+    var x: bits[8] = extend[8](foo())
+    x
+  }
+  functions {
+    foo(): bits[3] {
+        7
+    }
+  }
+}

@@ -38,9 +38,11 @@ data Type
   | TypeSprite String     -- not implemented
   | TypeBits Word
   | TypeRange Int Int
-  | TypeUser String
+  | TypeUser String       -- name of string
   | TypeVoid
-  | TypeLongPtr           -- internal to code generator
+  -- internal to code generator:
+  | TypeLongPtr
+  | TypeVariant Word      -- ID for variant tag
   | TypeDummy             -- dummy
 
 instance Show Type where

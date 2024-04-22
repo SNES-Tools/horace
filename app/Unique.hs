@@ -4,14 +4,15 @@ import Control.Monad.State
 
 type Unique a = State Word a
 
+fresh :: Unique Word
+fresh = state (\s -> (s, s + 1))
+
 gensym :: Unique String
 gensym = do
-  x <- get
-  put $ x + 1
+  x <- fresh
   return $ "label" ++ (show x)
 
 genstr :: String -> Unique String
 genstr s = do
-  x <- get
-  put $ x + 1
+  x <- fresh
   return $ s ++ (show x)

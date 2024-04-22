@@ -19,8 +19,21 @@ codeGenMode :: Mode -> Unique [Instruction]
 codeGenMode mode = do
   let ctx =
         Context
-          { funcDict = [] -- not okay but okay since no one actually looks stuff up here yet
-          , consDict = []
+          { funcDict =
+              map
+                (\(Func id ps t _) -> (id, (map paramType ps, t)))
+                (modeFuncs mode)
+          , consDict =
+              concatMap
+                (\(UserType _ vs) ->
+                   evalState
+                     (mapM
+                        (\(Variant id fs) -> do
+                           tag <- fresh
+                           return (id, (fs, TypeVariant tag)))
+                        vs)
+                     0)
+                (modeTypes mode)
           , gvarDict = []
           , mvarDict = map (\(MVar id t _) -> (id, t)) (modeVars mode)
           , lvarDict = []
@@ -28,17 +41,17 @@ codeGenMode mode = do
   init <- codeGenMVars ctx (modeVars mode)
   funcs <- codeGenFuncs ctx (modeFuncs mode)
   main <- codeGenExpr ctx (modeMain mode)
-  return
-    $ concat
-        [ funcs
-        , [Label "main"]
-        , main
-        , [RTL]
-        , [Label "init"]
-        , init
-        , [RTL]
-        , [Label "vblank", RTL]
-        ]
+  return $
+    concat
+      [ funcs
+      , [Label "main"]
+      , main
+      , [RTL]
+      , [Label "init"]
+      , init
+      , [RTL]
+      , [Label "vblank", RTL]
+      ]
 
 codeGenFuncs :: CodeContext -> [Func] -> Unique [Instruction]
 codeGenFuncs ctx = foldM (codeGenFunc ctx) []
@@ -105,18 +118,18 @@ codeGenExpr ctx (ExprUnOp (UnOpTransmute (Just l) (Just u)) expr) = do
   clampTop <- genstr "clamp_top"
   clampBot <- genstr "clamp_bot"
   end <- genstr "transmute_end"
-  return
-    $ concat
-        [ code
-        , [CMP (Imm16 $ fromIntegral u + 1)]
-        , [BPL (Label8 clampTop)]
-        , [CMP (Imm16 $ fromIntegral l)]
-        , [BMI (Label8 clampBot)]
-        , [BRA (Label8 end)]
-        , [Label clampTop, LDA (Imm16 $ fromIntegral u), BRA (Label8 end)]
-        , [Label clampBot, LDA (Imm16 $ fromIntegral l)]
-        , [Label end]
-        ]
+  return $
+    concat
+      [ code
+      , [CMP (Imm16 $ fromIntegral u + 1)]
+      , [BPL (Label8 clampTop)]
+      , [CMP (Imm16 $ fromIntegral l)]
+      , [BMI (Label8 clampBot)]
+      , [BRA (Label8 end)]
+      , [Label clampTop, LDA (Imm16 $ fromIntegral u), BRA (Label8 end)]
+      , [Label clampBot, LDA (Imm16 $ fromIntegral l)]
+      , [Label end]
+      ]
 codeGenExpr ctx (ExprUnOp (UnOpShrink (Just b)) expr) = do
   code <- codeGenExpr ctx expr
   let mask = foldl setBit 0 [0 .. (fromIntegral $ b - 1)]
@@ -132,14 +145,14 @@ codeGenExpr ctx (ExprUnOp (UnOpSignExtend (Just b')) expr) = do
   let testMask = bit $ fromIntegral $ b - 1
   let trueMask = foldl setBit 0 [fromIntegral b .. (fromIntegral $ b' - 1)]
   end <- genstr "sign_extend"
-  return
-    $ concat
-        [ code
-        , [BIT (Imm16 testMask)]
-        , [BEQ (Label8 end)]
-        , [ORA (Imm16 trueMask)]
-        , [Label end]
-        ]
+  return $
+    concat
+      [ code
+      , [BIT (Imm16 testMask)]
+      , [BEQ (Label8 end)]
+      , [ORA (Imm16 trueMask)]
+      , [Label end]
+      ]
 codeGenExpr ctx (ExprBinOp op expr1 expr2) = do
   code1 <- codeGenExpr ctx expr1
   code2 <- codeGenExpr (extendLocal ("", TypeBits 0) ctx) expr2
@@ -159,24 +172,25 @@ codeGenExpr ctx (ExprIf pred exprT exprF) = do
   codePred <- codeGenPred ctx pred labelT labelF
   codeT <- codeGenExpr ctx exprT
   codeF <- codeGenExpr ctx exprF
-  return
-    $ concat
-        [ codePred
-        , [Label labelT]
-        , codeT
-        , [BRA (Label8 labelEnd)]
-        , [Label labelF]
-        , codeF
-        , [Label labelEnd]
-        ]
+  return $
+    concat
+      [ codePred
+      , [Label labelT]
+      , codeT
+      , [BRA (Label8 labelEnd)]
+      , [Label labelF]
+      , codeF
+      , [Label labelEnd]
+      ]
 codeGenExpr ctx (ExprCall f exprs) = do
   args <- codeGenArgs ctx exprs
-  return
-    $ concat
-        [ args
-        , [JSL (Label24 f)]
-        , replicate (length exprs) PLX -- clobbers P
-        ]
+  return $
+    concat
+      [ args
+      , [JSL (Label24 f)]
+      , replicate (length exprs) PLX -- clobbers P
+      ]
+codeGenExpr ctx (ExprConstruct id exprs) = undefined
 codeGenExpr _ ExprVoid = return []
 codeGenExpr _ e = error $ show e
 
@@ -220,29 +234,30 @@ codeGenPred ctx (PredComp op expr1 expr2) true false = do
           CompLeqS -> [BMI (Label8 true), BEQ (Label8 true)]
           CompGeS -> [BEQ (Label8 false), BPL (Label8 true)]
           CompGeqS -> [BPL (Label8 true)]
-  return
-    $ concat
-        [ code1
-        , [PHA]
-        , code2
-        , [STA (Dir 0x00)]
-        , [PLA]
-        , [CMP (Dir 0x00)]
-        , compare
-        , [BRA (Label8 false)]
-        ]
+  return $
+    concat
+      [ code1
+      , [PHA]
+      , code2
+      , [STA (Dir 0x00)]
+      , [PLA]
+      , [CMP (Dir 0x00)]
+      , compare
+      , [BRA (Label8 false)]
+      ]
 
 codeGenMVars :: CodeContext -> [MVar] -> Unique [Instruction]
 codeGenMVars ctx = foldM (codeGenMVar ctx) []
 
 codeGenMVar :: CodeContext -> [Instruction] -> MVar -> Unique [Instruction]
-codeGenMVar ctx ins (MVar id t e) = do
+codeGenMVar ctx ins (MVar id t e)
   {-
     we can have the whole context available to us, because valid uses were
     already type checked
 
     type info is also ignored, should not be that way!
   -}
+ = do
   code <- codeGenExpr ctx e
   let Absolute x = lookupCG id ctx
   return $ concat [ins, code, [STA (Abs $ fromIntegral x)]]
