@@ -8,7 +8,7 @@ type Id = String
 
 data Mode = Mode { modeName :: Id
                  , modeTypes :: [UserType]
-                 , modeVars :: [MState]
+                 , modeVars :: [MVar]
                  , modeMain :: Expr
                  , modeFuncs :: [Func]
                  }
@@ -20,9 +20,9 @@ data UserType = UserType { utypeName :: Id,
 data Variant = Variant { consName :: Id,
                          consFields :: [Type] } deriving Show
 
-data MState = MState { mvarName :: Id,
-                       mvarType :: Type,
-                       mvarInit :: Expr } deriving Show
+data MVar = MVar { mvarName :: Id,
+                   mvarType :: Type,
+                   mvarInit :: Expr } deriving Show
 
 data Func = Func { funcName :: Id
                  , funcParams :: [Param]

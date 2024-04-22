@@ -22,7 +22,7 @@ codeGenMode mode = do
           { funcDict = [] -- not okay but okay since no one actually looks stuff up here yet
           , consDict = []
           , gvarDict = []
-          , mvarDict = map (\(MState id t _) -> (id, t)) (modeVars mode)
+          , mvarDict = map (\(MVar id t _) -> (id, t)) (modeVars mode)
           , lvarDict = []
           }
   init <- codeGenMVars ctx (modeVars mode)
@@ -232,11 +232,11 @@ codeGenPred ctx (PredComp op expr1 expr2) true false = do
         , [BRA (Label8 false)]
         ]
 
-codeGenMVars :: CodeContext -> [MState] -> Unique [Instruction]
+codeGenMVars :: CodeContext -> [MVar] -> Unique [Instruction]
 codeGenMVars ctx = foldM (codeGenMVar ctx) []
 
-codeGenMVar :: CodeContext -> [Instruction] -> MState -> Unique [Instruction]
-codeGenMVar ctx ins (MState id t e) = do
+codeGenMVar :: CodeContext -> [Instruction] -> MVar -> Unique [Instruction]
+codeGenMVar ctx ins (MVar id t e) = do
   {-
     we can have the whole context available to us, because valid uses were
     already type checked

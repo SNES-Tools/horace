@@ -36,7 +36,7 @@ typeCheckMode mode
              (utypeCons utype))
         (modeTypes mode)
 
-typeCheckState :: TypeContext -> MState -> Result TypeContext
+typeCheckState :: TypeContext -> MVar -> Result TypeContext
 typeCheckState ctx mvar = do
   let id = mvarName mvar
   let e = mvarInit mvar

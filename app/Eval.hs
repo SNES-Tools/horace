@@ -18,7 +18,7 @@ evalN :: Int -> Mode -> [Value]
 evalN num mode =
   let ctx =
         execState
-          (evalMStates $ modeVars mode)
+          (evalMVars $ modeVars mode)
           (funcContext
              $ map
                  (\f -> (funcName f, (map paramName (funcParams f), funcBody f)))
@@ -28,11 +28,11 @@ evalN num mode =
 eval :: Mode -> Value
 eval = head . evalN 1
 
-evalMStates :: [MState] -> Eval ()
-evalMStates = foldM (const evalMState) ()
+evalMVars :: [MVar] -> Eval ()
+evalMVars = foldM (const evalMVar) ()
 
-evalMState :: MState -> Eval ()
-evalMState (MState id _ expr) = do
+evalMVar :: MVar -> Eval ()
+evalMVar (MVar id _ expr) = do
   v <- evalExpr expr
   modify $ extendMVar (id, v)
 

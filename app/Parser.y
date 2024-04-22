@@ -111,7 +111,7 @@ state_decl : state '{' state_vars '}'   { $3 }
 state_vars :                            { [] }
            | state_var state_vars       { $1 : $2 }
 
-state_var  : id ':' type_state '=' expr { MState $1 $3 $5 }
+state_var  : id ':' type_state '=' expr { MVar $1 $3 $5 }
 
 main_decl  : main expr                  { $2 }
 
