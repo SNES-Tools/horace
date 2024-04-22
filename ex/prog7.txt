@@ -1,0 +1,12 @@
+mode First {
+  types {
+  }
+  state {
+  }
+  main {
+    var x: bits[8] = extend[8](0)
+    x <- extend[8](100) + 200
+  }
+  functions {
+  }
+}

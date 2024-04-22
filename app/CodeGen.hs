@@ -83,12 +83,23 @@ codeGenExpr ctx (ExprVar id) =
   case lookupCG id ctx of
     Absolute addr -> return [LDA $ Abs (fromIntegral addr)]
     Local off -> return [LDA $ Stack (fromIntegral off)]
+{-
+  when storing, also get rid of extra stuff. I don't think we always have to do
+  this. would need to make sure precisely when there must be extra stuff in the
+  bits. (would also not be needed if using properly compact storage)
+-}
 codeGenExpr ctx (ExprAssign (LValId id) expr) = do
   code <- codeGenExpr ctx expr
+  let Just t = lookupVar id ctx
+  let clean =
+        case t of
+          TypeBits b ->
+            [AND (Imm16 $ foldl setBit 0 [0 .. (fromIntegral $ b - 1)])]
+          _ -> []
   -- check to store in static area or stack
   case lookupCG id ctx of
-    Absolute addr -> return $ code ++ [STA $ Abs (fromIntegral addr)]
-    Local off -> return $ code ++ [STA $ Stack (fromIntegral off)]
+    Absolute addr -> return $ code ++ clean ++ [STA $ Abs (fromIntegral addr)]
+    Local off -> return $ code ++ clean ++ [STA $ Stack (fromIntegral off)]
 codeGenExpr ctx (ExprUnOp (UnOpTransmute (Just l) (Just u)) expr) = do
   code <- codeGenExpr ctx expr
   clampTop <- genstr "clamp_top"
