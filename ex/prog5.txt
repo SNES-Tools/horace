@@ -1,11 +1,12 @@
-mode F {
+mode First {
+  types {
+  }
   state {
-    x: bits[5] = 16
   }
-
   main {
-    var x: bits[5] = 16
+    var x: range[10, 20] = transmute[10, 20](r15)
+    transmute[10, 20](x - r6)
   }
-
-  functions { }
+  functions {
+  }
 }

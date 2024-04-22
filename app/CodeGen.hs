@@ -7,6 +7,7 @@ import AST
 import Context
 import Instructions
 import Type
+import Typechecker
 import Unique
 
 codeGen :: Mode -> [Instruction]
@@ -86,6 +87,26 @@ codeGenExpr ctx (ExprAssign (LValId id) expr) = do
   case lookupCG id ctx of
     Absolute addr -> return $ code ++ [STA $ Abs (fromIntegral addr)]
     Local off -> return $ code ++ [STA $ Stack (fromIntegral off)]
+codeGenExpr ctx (ExprUnOp (UnOpTransmute (Just l) (Just u)) expr) = do
+  code <- codeGenExpr ctx expr
+  clampTop <- genstr "clamp_top"
+  clampBot <- genstr "clamp_bot"
+  end <- genstr "transmute_end"
+  return
+    $ concat
+        [ code
+        , [CMP (Imm16 $ fromIntegral u + 1)]
+        , [BPL (Label8 clampTop)]
+        , [CMP (Imm16 $ fromIntegral l)]
+        , [BMI (Label8 clampBot)]
+        , [BRA (Label8 end)]
+        , [Label clampTop, LDA (Imm16 $ fromIntegral u), BRA (Label8 end)]
+        , [Label clampBot, LDA (Imm16 $ fromIntegral l)]
+        , [Label end]
+        ]
+--codeGenExpr ctx (ExprUnOp op expr) = do
+--  code <- codeGenExpr ctx expr
+--  let t = 
 codeGenExpr ctx (ExprBinOp op expr1 expr2) = do
   code1 <- codeGenExpr ctx expr1
   code2 <- codeGenExpr (extendLocal ("", TypeBits 0) ctx) expr2
