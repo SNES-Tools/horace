@@ -178,6 +178,7 @@ typeofExpr ctx (ExprConstruct id es) = do
         then return t
         else typeError ["constructor fields not matching"]
     Nothing -> typeError ["constructor not found: ", id]
+-- need to check pattern does not declare duplicate variable names!
 typeofExpr ctx (ExprMatch expr cases) = do
   t <- typeofExpr ctx expr -- case guard
   ts <- mapM (typeofCase ctx t) cases

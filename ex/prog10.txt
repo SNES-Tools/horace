@@ -1,4 +1,4 @@
-mode First {
+mode PatternMatchingTest {
   types {
     MaybeByte {
       Just(bits[8]),
@@ -8,21 +8,28 @@ mode First {
       True,
       False
     }
+    Compound {
+      Pair(MaybeByte, Bool)
+    }
   }
   state {
+    x: MaybeByte = Just(200)
+    b: Bool = True
   }
   main {
-    var x: MaybeByte = Just(200)
-    var b: Bool = False
     x <- match x with {
-      Just(y) -> Just(y + extend[8](1))
+      Just(y) -> if y = 255 then
+                   Nothing
+                 else
+                   Just(y + extend[8](1))
       Nothing -> Nothing
     }
-    boolNot(b)
+    b <- boolNot(b)
+    Pair(x, b)
   }
   functions {
-    boolNot(b: Bool): Bool {
-      match b with {
+    boolNot(q: Bool): Bool {
+      match q with {
         True  -> False
         False -> True
       }

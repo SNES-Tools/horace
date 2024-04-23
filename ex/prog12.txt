@@ -1,0 +1,21 @@
+mode BoolTest {
+  types {
+    Bool {
+      True,
+      False
+    }
+  }
+  state {
+  }
+  main {
+    boolNot(True)
+  }
+  functions {
+    boolNot(q: Bool): Bool {
+      match q with {
+        True  -> False
+        False -> True
+      }
+    }
+  }
+}

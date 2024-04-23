@@ -19,10 +19,10 @@ evalN num mode =
   let ctx =
         execState
           (evalMVars $ modeVars mode)
-          (funcContext
-             $ map
-                 (\f -> (funcName f, (map paramName (funcParams f), funcBody f)))
-                 (modeFuncs mode))
+          (funcContext $
+           map
+             (\f -> (funcName f, (map paramName (funcParams f), funcBody f)))
+             (modeFuncs mode))
    in evalState (replicateM num $ evalExpr (modeMain mode)) ctx
 
 eval :: Mode -> Value
@@ -91,12 +91,12 @@ evalExpr (ExprUnOp (UnOpSignExtend (Just width')) expr) = do
         subtraction should be fine, since an invariant we maintain is that
         the width of all values least 1 (so we can get at least the 0th bit)
       -}
-        then return
-               $ ValBits width'
-               $ foldr
-                   (.|.)
-                   num
-                   [bit (fromIntegral i) | i <- [width .. (width' - 1)]]
+        then return $
+             ValBits width' $
+             foldr
+               (.|.)
+               num
+               [bit (fromIntegral i) | i <- [width .. (width' - 1)]]
         else return $ ValBits width' num
 evalExpr (ExprBinOp op expr1 expr2) = do
   val1 <- evalExpr expr1
@@ -129,6 +129,16 @@ evalExpr (ExprCall f args) = do
 evalExpr (ExprConstruct id args) = do
   argv <- mapM evalExpr args
   return $ ValUser id argv
+evalExpr (ExprMatch expr cases) = do
+  val <- evalExpr expr
+  -- evaluate guard
+  let ValUser id vals = val
+  -- find the correct case
+  let Just (xs, expr') =
+        lookup id (map (\(PatData id' xs, exp) -> (id', (xs, exp))) cases)
+  -- want to use flip
+  forM (zip xs vals) (\(id, val) -> modify $ extendLocal (id, val))
+  evalExpr expr'
 evalExpr _ = undefined
 
 evalVars :: [Var] -> Eval ()
