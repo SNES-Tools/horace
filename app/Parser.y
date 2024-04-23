@@ -137,6 +137,7 @@ expr  : int                             { ExprLit $1 }
       | lval '<-' expr                  { ExprAssign $1 $3 }
       | idc args ')'                    { ExprCall $1 $2 }
       | Idc args ')'                    { ExprConstruct $1 $2 }
+      | Id                              { ExprConstruct $1 [] }
       | id '.' idc args ')'             { ExprMethodCall $1 $3 $4 }
       | match expr with '{' cases '}'   { ExprMatch $2 $5 }
       | trans '[' int ',' int ']' '(' expr ')'   { ExprUnOp (UnOpTransmute (Just (fromIntegral $3)) (Just (fromIntegral $5))) $8 }
@@ -172,13 +173,11 @@ cases :             { [] }
 
 case : pat '->' expr  { ($1, $3) }
 
-pat : '_'             { PatWildcard }
-    | int             { PatLit $1 }
-    | id              { PatData $1 [] }
-    | id '(' pats ')' { PatData $1 $3 }
+pat : Id              { PatData $1 [] }
+    | Idc pats ')'    { PatData $1 $2 }
 
-pats :              { [] }
-     | pat ',' pats { $1 : $3 }
+pats : id          { [$1] }
+     | id ',' pats { $1 : $3 }
 
 pred : true             { PredLit True }
      | false            { PredLit False }

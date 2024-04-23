@@ -178,7 +178,36 @@ typeofExpr ctx (ExprConstruct id es) = do
         then return t
         else typeError ["constructor fields not matching"]
     Nothing -> typeError ["constructor not found: ", id]
+typeofExpr ctx (ExprMatch expr cases) = do
+  t <- typeofExpr ctx expr -- case guard
+  ts <- mapM (typeofCase ctx t) cases
+  if null ts
+    then return TypeVoid
+    else if and $ map (== head ts) (tail ts)
+           then return $ ts !! 0
+           else typeError ["nonmatching result type of cases"]
 typeofExpr _ _ = Left "feature is undefined"
+
+{-
+  All cases must look like:
+    Just(x, y)
+      |  |
+      |  |-- all these must be variables
+      |----- this must be the name of a constructor
+-}
+typeofCase :: TypeContext -> Type -> Case -> Result Type
+typeofCase ctx t ((PatData id fs), expr) = do
+  case lookupCons id ctx of
+    Just (ts, t')
+    -- ts = type of fields
+    -- t' = actual user type
+     ->
+      if t == t'
+             -- now need to add locals for the fields
+        then let ctx' = foldr extendLocal ctx (zip fs ts)
+              in typeofExpr ctx' expr
+        else typeError ["not a constructor of user type: ", id]
+    Nothing -> typeError ["constructor not found: ", id]
 
 typeofVars :: TypeContext -> [Var] -> Result TypeContext
 typeofVars = foldM typeofVar

@@ -10,6 +10,9 @@ mode First {
       FourWords(bits[16], bits[16], bits[16], bits[16]),
       FiveWords(bits[16], bits[16], bits[16], bits[16], bits[16])
     }
+    TypeOfTypes {
+      Double(MaybeByte)
+    }
   }
   state {
   }
@@ -20,6 +23,7 @@ mode First {
     Just(202)
     Nothing()
     FiveWords(40000, 45000, 50000, 55000, 60000)
+    Double(Just(200))
   }
   functions {
   }

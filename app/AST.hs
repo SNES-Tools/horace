@@ -64,7 +64,7 @@ type Case = (Pattern, Expr)     -- not implemented
 data Pattern
   = PatWildcard                 -- not implemented
   | PatLit Int                  -- not implemented
-  | PatData Id [Pattern]        -- not implemented
+  | PatData Id [Id]
   deriving (Show)
 
 data Var =

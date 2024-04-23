@@ -1,0 +1,31 @@
+mode First {
+  types {
+    MaybeByte {
+      Just(bits[8]),
+      Nothing
+    }
+    Bool {
+      True,
+      False
+    }
+  }
+  state {
+  }
+  main {
+    var x: MaybeByte = Just(200)
+    var b: Bool = False
+    x <- match x with {
+      Just(y) -> Just(y + extend[8](1))
+      Nothing -> Nothing
+    }
+    boolNot(b)
+  }
+  functions {
+    boolNot(b: Bool): Bool {
+      match b with {
+        True  -> False
+        False -> True
+      }
+    }
+  }
+}

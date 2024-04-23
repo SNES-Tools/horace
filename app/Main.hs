@@ -36,7 +36,7 @@ main = do
   case typeCheck ast of
     Just e  -> putStrLn $ "Type error: " ++ e
     Nothing -> do
---                 putStrLn "Type checker OK"
+                 putStrLn "Type checker OK"
                  print $ evalN 100 ast
                  let lines = map (show . pretty) (codeGen ast)
                  output <- openFile "asm/prog.asm" WriteMode
