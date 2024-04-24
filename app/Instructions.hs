@@ -4,6 +4,7 @@ import Prettyprinter
 import Prettyprinter.Render.Text
 import System.IO
 
+import Data.List (intercalate)
 import Data.Word (Word16, Word32, Word8)
 
 {-
@@ -113,6 +114,7 @@ data Instruction
   | XBA
   | XCE
   | Label String -- here is the label
+  | Table [String]
   deriving (Show)
 
 {-
@@ -153,6 +155,7 @@ data Operand
   | Label8 String -- labels for the purpose of (not long) branches
   | Label16 String -- location defined
   | Label24 String -- location defined
+  | LabelXInd String
   deriving (Show)
 
 isValidOperand :: Instruction -> Bool
@@ -529,6 +532,8 @@ instance Pretty Instruction where
   pretty (XBA) = indent 4 (pretty "XBA")
   pretty (XCE) = indent 4 (pretty "XCE")
   pretty (Label s) = group (pretty s <> pretty ":")
+  pretty (Table ss) =
+    indent 4 (group ((pretty "dw") <+> pretty (intercalate "," ss)))
 
 instance Pretty Operand where
   pretty (Imm8 w) = pretty ".B" <+> pretty "#" <> pretty w
@@ -539,7 +544,7 @@ instance Pretty Operand where
   pretty (Dir w) = pretty ".B" <+> pretty w
   pretty (DirX w) = pretty ".B" <+> pretty w <> pretty ",X"
   pretty (DirY w) = pretty ".B" <+> pretty w <> pretty ",Y"
-  pretty (Accumulator) = pretty "A"
+  pretty (Accumulator) = pretty " A"
   pretty (DirInd w) = pretty ".B" <+> parens (pretty w)
   pretty (Long w) = pretty ".L" <+> pretty w
   pretty (LongX w) = pretty ".L" <+> pretty w <> pretty ",X"
@@ -556,6 +561,7 @@ instance Pretty Operand where
   pretty (Label8 s) = pretty ".B" <+> pretty s
   pretty (Label16 s) = pretty ".W" <+> pretty s
   pretty (Label24 s) = pretty ".L" <+> pretty s
+  pretty (LabelXInd s) = pretty ".W" <+> parens (pretty s <> pretty ",X")
 
 putDocCompact :: Doc a -> IO ()
 putDocCompact = renderIO System.IO.stdout . layoutCompact . (fuse Deep)

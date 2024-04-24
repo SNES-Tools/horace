@@ -6,9 +6,10 @@ mode BoolTest {
     }
   }
   state {
+    b: Bool = False
   }
   main {
-    boolNot(True)
+    b <- boolNot(b)
   }
   functions {
     boolNot(q: Bool): Bool {
