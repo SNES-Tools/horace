@@ -193,46 +193,56 @@ codeGenExpr ctx (ExprCall f exprs) = do
         , [JSL (Label24 f)]
         , replicate (length exprs) PLX -- clobbers P
         ]
--- assuming that all constructs will be on the heap, and not in the registers...
 codeGenExpr ctx (ExprConstruct id exprs) = do
-  let Just (_, TypeVariant tag) = lookupCons id ctx
-  code <- codeGenFields ctx exprs
-  return
-    $ concat
-        [ [LDA (Dir 10)]
-        , [TAX]
-        , [CLC]
-        , [ ADC
-              (Imm16
-                 $ 2
-                     + (sum
-                          $ map
-                              (fromIntegral
-                                 . sizeofType
-                                 . fromResult
-                                 . typeofExpr ctx)
-                              exprs))
-          ]
-        , [STA (Dir 10)]
-        , [LDA (Imm16 $ fromIntegral tag)]
-        , [STA (LongX 0x7F0000)]
-        , [PHX] -- immediate push then pull: not always a no-op? (status flags)
-        , code
-        , [PLX]
-        , [TXA]
-        ]
+  let Just (ts, TypeVariant tag) = lookupCons id ctx
+  if null ts
+    -- new optimization: if there are no fields, just store tag as immediate
+    then return [LDA (Imm16 $ fromIntegral tag)]
+    else do
+      code <- codeGenFields ctx exprs
+      return
+        $ concat
+            [ [LDA (Dir 0x10)]
+            , [TAX]
+            , [CLC]
+            , [ADC (Imm16 sizeofVariant)]
+            , [STA (Dir 0x10)]
+            , [LDA (Imm16 $ fromIntegral tag)]
+            , [STA (LongX 0x7F0000)]
+            , [PHX]
+            , code
+            , [PLX]
+            , [TXA] -- value of pointer
+            -- tag with pointer information
+            , [SEC]
+            , [ROR Accumulator]
+            ]
+  where
+    sizeofVariant =
+      2
+        + (sum
+             $ map
+                 (fromIntegral . sizeofType . fromResult . typeofExpr ctx)
+                 exprs)
 codeGenExpr ctx (ExprMatch expr cases) = do
   code <- codeGenExpr ctx expr
   codeCases <- codeGenCases ctx cases
   labelTable <- genstr "match_table"
+  skip <- genstr "skip"
   return
     $ concat
         [ code
+        , [ASL Accumulator] -- shifts high bit into carry
+        -- C = 0: immediate, C = 1: pointer
+        , [BCC (Label8 skip)] -- immediates go brrr
+        -- A = proper pointer
         , [TAX]
         , [TAY]
         , [LDA (LongX 0x7F0000)]
         , [ASL Accumulator]
-        , [TAX]
+        -- immediates here (cannot assume that Y contains pointer!)
+        , [Label skip]
+        , [TAX] -- offset into table is in Bytes, which is 2 * Tag#
         , [JMP (LabelXInd labelTable)]
         , [Label labelTable]
         , codeCases
@@ -391,7 +401,13 @@ codeGenCases ctx cases
          code <- codeGenCase ctx cass
          return
            $ ( labels ++ [label] -- UGLY!!
-             , concat [ins, [(Label label)], [TYX], code, [BRL (Label16 end)]]))
+             , concat
+                 [ ins
+                 , [(Label label)]
+                 , [TYX] -- the Y register will not contain the pointer if the
+                 , code -- variant is stored as an immediate
+                 , [BRL (Label16 end)]
+                 ]))
       ([], [])
       cases
   let (labels, codeCases) = res
@@ -414,7 +430,7 @@ codeGenCase ctx ((PatData id fs), expr)
            ( addr + (sizeofType t)
            , concat [ins, [LDA (LongX $ fromIntegral addr)], [PHA]]))
       (0x7F0002, [])
-      ts
+      ts -- if empty, do nothing; base case empty list []
   let (_, decode) = decons
   return $ concat [decode, eval, replicate (length fs) PLX]
 
