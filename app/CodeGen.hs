@@ -44,17 +44,17 @@ codeGenMode mode = do
   init <- codeGenMVars ctx (modeVars mode)
   funcs <- codeGenFuncs ctx (modeFuncs mode)
   main <- codeGenExpr ctx (modeMain mode)
-  return $
-    concat
-      [ funcs
-      , [Label "main"]
-      , main
-      , [RTL]
-      , [Label "init"]
-      , init
-      , [RTL]
-      , [Label "vblank", RTL]
-      ]
+  return
+    $ concat
+        [ funcs
+        , [Label "main"]
+        , main
+        , [RTL]
+        , [Label "init"]
+        , init
+        , [RTL]
+        , [Label "vblank", RTL]
+        ]
 
 codeGenFuncs :: CodeContext -> [Func] -> Unique [Instruction]
 codeGenFuncs ctx = foldM (codeGenFunc ctx) []
@@ -121,18 +121,18 @@ codeGenExpr ctx (ExprUnOp (UnOpTransmute (Just l) (Just u)) expr) = do
   clampTop <- genstr "clamp_top"
   clampBot <- genstr "clamp_bot"
   end <- genstr "transmute_end"
-  return $
-    concat
-      [ code
-      , [CMP (Imm16 $ fromIntegral u + 1)]
-      , [BPL (Label8 clampTop)]
-      , [CMP (Imm16 $ fromIntegral l)]
-      , [BMI (Label8 clampBot)]
-      , [BRA (Label8 end)]
-      , [Label clampTop, LDA (Imm16 $ fromIntegral u), BRA (Label8 end)]
-      , [Label clampBot, LDA (Imm16 $ fromIntegral l)]
-      , [Label end]
-      ]
+  return
+    $ concat
+        [ code
+        , [CMP (Imm16 $ fromIntegral u + 1)]
+        , [BPL (Label8 clampTop)]
+        , [CMP (Imm16 $ fromIntegral l)]
+        , [BMI (Label8 clampBot)]
+        , [BRA (Label8 end)]
+        , [Label clampTop, LDA (Imm16 $ fromIntegral u), BRA (Label8 end)]
+        , [Label clampBot, LDA (Imm16 $ fromIntegral l)]
+        , [Label end]
+        ]
 codeGenExpr ctx (ExprUnOp (UnOpShrink (Just b)) expr) = do
   code <- codeGenExpr ctx expr
   let mask = foldl setBit 0 [0 .. (fromIntegral $ b - 1)]
@@ -148,14 +148,14 @@ codeGenExpr ctx (ExprUnOp (UnOpSignExtend (Just b')) expr) = do
   let testMask = bit $ fromIntegral $ b - 1
   let trueMask = foldl setBit 0 [fromIntegral b .. (fromIntegral $ b' - 1)]
   end <- genstr "sign_extend"
-  return $
-    concat
-      [ code
-      , [BIT (Imm16 testMask)]
-      , [BEQ (Label8 end)]
-      , [ORA (Imm16 trueMask)]
-      , [Label end]
-      ]
+  return
+    $ concat
+        [ code
+        , [BIT (Imm16 testMask)]
+        , [BEQ (Label8 end)]
+        , [ORA (Imm16 trueMask)]
+        , [Label end]
+        ]
 codeGenExpr ctx (ExprBinOp op expr1 expr2) = do
   code1 <- codeGenExpr ctx expr1
   code2 <- codeGenExpr (extendLocal ("", TypeBits 0) ctx) expr2
@@ -175,68 +175,68 @@ codeGenExpr ctx (ExprIf pred exprT exprF) = do
   codePred <- codeGenPred ctx pred labelT labelF
   codeT <- codeGenExpr ctx exprT
   codeF <- codeGenExpr ctx exprF
-  return $
-    concat
-      [ codePred
-      , [Label labelT]
-      , codeT
-      , [BRA (Label8 labelEnd)]
-      , [Label labelF]
-      , codeF
-      , [Label labelEnd]
-      ]
+  return
+    $ concat
+        [ codePred
+        , [Label labelT]
+        , codeT
+        , [BRA (Label8 labelEnd)]
+        , [Label labelF]
+        , codeF
+        , [Label labelEnd]
+        ]
 codeGenExpr ctx (ExprCall f exprs) = do
   args <- codeGenArgs ctx exprs
-  return $
-    concat
-      [ args
-      , [JSL (Label24 f)]
-      , replicate (length exprs) PLX -- clobbers P
-      ]
+  return
+    $ concat
+        [ args
+        , [JSL (Label24 f)]
+        , replicate (length exprs) PLX -- clobbers P
+        ]
 -- assuming that all constructs will be on the heap, and not in the registers...
 codeGenExpr ctx (ExprConstruct id exprs) = do
   let Just (_, TypeVariant tag) = lookupCons id ctx
   code <- codeGenFields ctx exprs
-  return $
-    concat
-      [ [LDA (Dir 10)]
-      , [TAX]
-      , [CLC]
-      , [ ADC
-            (Imm16 $
-             1 +
-             (sum $
-              map
-                (fromIntegral . sizeofType . fromResult . typeofExpr ctx)
-                exprs))
+  return
+    $ concat
+        [ [LDA (Dir 10)]
+        , [TAX]
+        , [CLC]
+        , [ ADC
+              (Imm16
+                 $ 2
+                     + (sum
+                          $ map
+                              (fromIntegral
+                                 . sizeofType
+                                 . fromResult
+                                 . typeofExpr ctx)
+                              exprs))
+          ]
+        , [STA (Dir 10)]
+        , [LDA (Imm16 $ fromIntegral tag)]
+        , [STA (LongX 0x7F0000)]
+        , [PHX] -- immediate push then pull: not always a no-op? (status flags)
+        , code
+        , [PLX]
+        , [TXA]
         ]
-      , [STA (Dir 10)]
-      , [SEP (Imm8 0x20)]
-      , [LDA (Imm8 $ fromIntegral tag)]
-      , [STA (LongX 0x7F0000)]
-      , [REP (Imm8 0x20)]
-      , [PHX] -- immediate push then pull: not always a no-op? (status flags)
-      , code
-      , [PLX]
-      , [TXA]
-      ]
 codeGenExpr ctx (ExprMatch expr cases) = do
   code <- codeGenExpr ctx expr
   codeCases <- codeGenCases ctx cases
   labelTable <- genstr "match_table"
-  return $
-    concat
-      [ code
-      , [TAX]
-      , [TAY]
-      , [LDA (LongX 0x7F0000)]
-      , [AND (Imm16 0x00FF)]
-      , [ASL Accumulator]
-      , [TAX]
-      , [JMP (LabelXInd labelTable)]
-      , [Label labelTable]
-      , codeCases
-      ]
+  return
+    $ concat
+        [ code
+        , [TAX]
+        , [TAY]
+        , [LDA (LongX 0x7F0000)]
+        , [ASL Accumulator]
+        , [TAX]
+        , [JMP (LabelXInd labelTable)]
+        , [Label labelTable]
+        , codeCases
+        ]
 codeGenExpr _ ExprVoid = return []
 codeGenExpr _ e = error $ show e
 
@@ -280,17 +280,17 @@ codeGenPred ctx (PredComp op expr1 expr2) true false = do
           CompLeqS -> [BMI (Label8 true), BEQ (Label8 true)]
           CompGeS -> [BEQ (Label8 false), BPL (Label8 true)]
           CompGeqS -> [BPL (Label8 true)]
-  return $
-    concat
-      [ code1
-      , [PHA]
-      , code2
-      , [STA (Dir 0x00)]
-      , [PLA]
-      , [CMP (Dir 0x00)]
-      , compare
-      , [BRA (Label8 false)]
-      ]
+  return
+    $ concat
+        [ code1
+        , [PHA]
+        , code2
+        , [STA (Dir 0x00)]
+        , [PLA]
+        , [CMP (Dir 0x00)]
+        , compare
+        , [BRA (Label8 false)]
+        ]
 
 codeGenMVars :: CodeContext -> [MVar] -> Unique [Instruction]
 codeGenMVars ctx = foldM (codeGenMVar ctx) []
@@ -340,7 +340,7 @@ codeGenArg (ctx, ins) expr = do
 
 codeGenFields :: CodeContext -> [Expr] -> Unique [Instruction]
 codeGenFields ctx exprs = do
-  res <- foldM (codeGenField ctx) (0x7F0001, []) exprs
+  res <- foldM (codeGenField ctx) (0x7F0002, []) exprs
   return $ snd res
 
 codeGenField ::
@@ -352,10 +352,10 @@ codeGenField ctx (addr, ins) expr = do
   let ctx' = extendLocal ("", TypeDummy) ctx
   let size = sizeofType $ fromResult $ typeofExpr ctx expr
   code <- codeGenExpr ctx' expr
-  return $
-    ( addr + size
+  return
+    $ ( addr + size
       -- assumption of 16 bit sizes
-    , concat [ins, code, [PLX], [STA (LongX $ fromIntegral addr)], [PHX]])
+      , concat [ins, code, [PLX], [STA (LongX $ fromIntegral addr)], [PHX]])
 
 {-
   The structure of a generated cases is like:
@@ -368,7 +368,7 @@ codeGenField ctx (addr, ins) expr = do
     BRL end
   case1:
     BRL end
-  end:
+  end: replicate (length vars) PLX
 -}
 codeGenCases :: CodeContext -> [Case] -> Unique [Instruction]
 codeGenCases ctx cases
@@ -389,9 +389,9 @@ codeGenCases ctx cases
       (\(labels, ins) cass -> do
          label <- genstr "case"
          code <- codeGenCase ctx cass
-         return $
-           ( labels ++ [label] -- UGLY!!
-           , concat [ins, [(Label label)], [TYX], code, [BRL (Label16 end)]]))
+         return
+           $ ( labels ++ [label] -- UGLY!!
+             , concat [ins, [(Label label)], [TYX], code, [BRL (Label16 end)]]))
       ([], [])
       cases
   let (labels, codeCases) = res
@@ -413,10 +413,10 @@ codeGenCase ctx ((PatData id fs), expr)
          return
            ( addr + (sizeofType t)
            , concat [ins, [LDA (LongX $ fromIntegral addr)], [PHA]]))
-      (0x7F0001, [])
+      (0x7F0002, [])
       ts
   let (_, decode) = decons
-  return $ decode ++ eval
+  return $ concat [decode, eval, replicate (length fs) PLX]
 
 codeBlockSize :: [Instruction] -> Word
 codeBlockSize = sum . map sizeof
