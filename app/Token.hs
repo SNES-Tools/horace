@@ -71,4 +71,19 @@ data Token
   | TokenMain
   | TokenFunctions
   | TokenTypes
+  -- controller stuff
+  | TokenPressed
+  | TokenHolding
+  | TokenButtonA
+  | TokenButtonX
+  | TokenButtonL
+  | TokenButtonR
+  | TokenButtonB
+  | TokenButtonY
+  | TokenButtonSELECT
+  | TokenButtonSTART
+  | TokenButtonUP
+  | TokenButtonDOWN
+  | TokenButtonLEFT
+  | TokenButtonRIGHT
   deriving (Show)

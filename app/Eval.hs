@@ -185,6 +185,8 @@ evalPred (PredComp op e1 e2) = do
         CompLeqS -> (<=)
         CompGeS -> (>)
         CompGeqS -> (>=)
+evalPred (PredPressed _ _) = return False
+evalPred (PredHolding _ _) = return False
 
 isSignedComp :: CompOp -> Bool
 isSignedComp CompLeS = True

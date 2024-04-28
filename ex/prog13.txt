@@ -1,0 +1,24 @@
+mode ConTest {
+  types {
+  }
+  state {
+      counter: range[0, 100]   = transmute[0, 100](r0)
+      holder:  range[0, 10000] = transmute[0, 10000](r0)
+  }
+  main {
+    if pressed[1, UP] then
+        counter <- transmute[0, 100](counter + r1)
+    else if pressed[1, DOWN] then
+        counter <- transmute[0, 100](counter - r1)
+    else
+        counter
+        
+    if holding[1, A] then
+        holder <- transmute[0, 10000](holder + r1)
+    else
+        holder <- transmute[0, 10000](holder - r1)
+
+  }
+  functions {
+  }
+}

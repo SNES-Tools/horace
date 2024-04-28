@@ -81,6 +81,22 @@ lexVar cs =
     ("mode", rest) -> TokenMode : lexer rest
     ("functions", rest) -> TokenFunctions : lexer rest
     ("types", rest) -> TokenTypes : lexer rest
+    -- controller feature
+    ("pressed", rest) -> TokenPressed : lexer rest
+    ("holding", rest) -> TokenHolding : lexer rest
+    ("A", rest)       -> TokenButtonA : lexer rest
+    ("X", rest)       -> TokenButtonX : lexer rest
+    ("L", rest)       -> TokenButtonL : lexer rest
+    ("R", rest)       -> TokenButtonR : lexer rest
+    ("B", rest)       -> TokenButtonB : lexer rest
+    ("Y", rest)       -> TokenButtonY : lexer rest
+    ("SELECT", rest)  -> TokenButtonSELECT : lexer rest
+    ("START", rest)   -> TokenButtonSTART : lexer rest
+    ("UP", rest)      -> TokenButtonUP : lexer rest
+    ("DOWN", rest)    -> TokenButtonDOWN : lexer rest
+    ("LEFT", rest)    -> TokenButtonLEFT : lexer rest
+    ("RIGHT", rest)   -> TokenButtonRIGHT : lexer rest
+    -- literals
     ("r", '-':rest) -> TokenRInt (-(read num)) : lexer rest'
       where (num, rest') = span isDigit rest
     ("r", rest) -> TokenRInt (read num) : lexer rest'

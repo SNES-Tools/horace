@@ -47,6 +47,23 @@ import Type
   shrink{ TokenShrink }
   ext   { TokenExtend }
   sext  { TokenSignExtend }
+
+  pressed { TokenPressed }
+  holding { TokenHolding }
+
+  A       { TokenButtonA }
+  X       { TokenButtonX }
+  L       { TokenButtonL }
+  R       { TokenButtonR }
+  B       { TokenButtonB }
+  Y       { TokenButtonY }
+  SELECT  { TokenButtonSELECT }
+  START   { TokenButtonSTART }
+  UP      { TokenButtonUP }
+  DOWN    { TokenButtonDOWN }
+  LEFT    { TokenButtonLEFT }
+  RIGHT   { TokenButtonRIGHT }
+    
   '+'   { TokenPlus }
   '-'   { TokenMinus }
   '&'   { TokenAmphersand }
@@ -185,6 +202,8 @@ pred : true             { PredLit True }
      | pred and pred    { PredBinOp PredAnd $1 $3 }
      | pred or pred     { PredBinOp PredOr $1 $3 }
      | expr comp expr   { PredComp $2 $1 $3 }
+     | pressed '[' int ',' button ']'  { PredPressed $3 $5 }
+     | holding '[' int ',' button ']'  { PredHolding $3 $5 }
 
 comp : '='    { CompEq }
      | '/='   { CompNeq }
@@ -196,6 +215,19 @@ comp : '='    { CompEq }
      | '>$'   { CompGeS }
      | '<=$'  { CompLeqS }
      | '>=$'  { CompGeqS }
+
+button : A      { ButtonA }
+       | X      { ButtonX }
+       | L      { ButtonL }
+       | R      { ButtonR }
+       | B      { ButtonB }
+       | Y      { ButtonY }
+       | SELECT { ButtonSELECT }
+       | START  { ButtonSTART }
+       | UP     { ButtonUP }
+       | DOWN   { ButtonDOWN }
+       | LEFT   { ButtonLEFT }
+       | RIGHT  { ButtonRIGHT }
 
 type_state : type_reg                 { $1 }
 

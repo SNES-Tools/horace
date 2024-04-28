@@ -6,6 +6,7 @@ import Control.Monad.State
 import Data.Bits
 import Data.List
 import Data.Maybe
+import Data.Word (Word16)
 
 import AST
 import Context
@@ -301,6 +302,50 @@ codeGenPred ctx (PredComp op expr1 expr2) true false = do
         , compare
         , [BRA (Label8 false)]
         ]
+codeGenPred _ (PredPressed con button) true false = do
+  let addr =
+        case con of
+          1 -> 0x14
+          2 -> 0x18
+  let mask = buttonToMask button
+  return
+    $ concat
+        [ [LDA (Dir addr)]
+        , [AND (Imm16 mask)]
+        , [BNE (Label8 true)]
+        , [BRA (Label8 false)]
+        ]
+codeGenPred _ (PredHolding con button) true false = do
+  let addr =
+        case con of
+          1 -> 0x12
+          2 -> 0x16
+  let mask = buttonToMask button
+  return
+    $ concat
+        [ [LDA (Dir addr)]
+        , [AND (Imm16 mask)]
+        , [BNE (Label8 true)]
+        , [BRA (Label8 false)]
+        ]
+
+{-
+  The button format is
+  BYETudlr AXLR----
+-}
+buttonToMask :: Button -> Word16
+buttonToMask ButtonA = 0x0080
+buttonToMask ButtonX = 0x0040
+buttonToMask ButtonL = 0x0020
+buttonToMask ButtonR = 0x0010
+buttonToMask ButtonB = 0x8000
+buttonToMask ButtonY = 0x4000
+buttonToMask ButtonSELECT = 0x2000
+buttonToMask ButtonSTART = 0x1000
+buttonToMask ButtonUP = 0x0800
+buttonToMask ButtonDOWN = 0x0400
+buttonToMask ButtonLEFT = 0x0200
+buttonToMask ButtonRIGHT = 0x0100
 
 codeGenMVars :: CodeContext -> [MVar] -> Unique [Instruction]
 codeGenMVars ctx = foldM (codeGenMVar ctx) []

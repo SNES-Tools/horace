@@ -45,7 +45,14 @@ typeCheckState ctx mvar = do
   if isValidStateType t
     then if t == t'
            then return $ extendMVar (id, t) ctx
-           else typeError ["types not equal for assignment"]
+           else typeError
+                  [ "types not equal for assignment to variable"
+                  , id
+                  , ": expected"
+                  , show t
+                  , " but got "
+                  , show t'
+                  ]
     else typeError ["not valid type for state"]
 
 typeCheckFunc :: TypeContext -> Func -> Result TypeContext
@@ -119,9 +126,8 @@ typeofExpr c (ExprBinOp BinOpBitEor e1 e2) = bitwiseOpType c e1 e2
 typeofExpr c (ExprBinOp BinOpAdd e1 e2) = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
-  case (t1, t2)
+  case (t1, t2) of
     -- bit cases
-        of
     (TypeBits _, TypeBits _) -> bitwiseOpType c e1 e2
     -- range cases
     (TypeRange l1 u1, TypeRange l2 u2) -> return $ TypeRange (l1 + l2) (u1 + u2)
@@ -129,9 +135,8 @@ typeofExpr c (ExprBinOp BinOpAdd e1 e2) = do
 typeofExpr c (ExprBinOp BinOpSub e1 e2) = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
-  case (t1, t2)
+  case (t1, t2) of
     -- bit cases
-        of
     (TypeBits _, TypeBits _) -> bitwiseOpType c e1 e2
     -- range cases
     (TypeRange l1 u1, TypeRange l2 u2) -> return $ TypeRange (l1 - u2) (u1 - l2)
@@ -156,7 +161,14 @@ typeofExpr c (ExprAssign (LValId id) e) = do
   t' <- typeofExpr c e
   if t == t'
     then return t
-    else typeError ["types not equal for assignment"]
+    else typeError
+                  [ "types not equal for assignment to variable"
+                  , id
+                  , ": expected"
+                  , show t
+                  , " but got "
+                  , show t'
+                  ]
 typeofExpr c (ExprCall id args) = do
   ts <- mapM (typeofExpr c) args
   -- first, check type of args is okay
@@ -199,15 +211,14 @@ typeofExpr _ _ = Left "feature is undefined"
 typeofCase :: TypeContext -> Type -> Case -> Result Type
 typeofCase ctx t ((PatData id fs), expr) = do
   case lookupCons id ctx of
-    Just (ts, t')
-    -- ts = type of fields
-    -- t' = actual user type
-     ->
+    Just (ts, t') ->
       if t == t'
-             -- now need to add locals for the fields
         then let ctx' = foldr extendLocal ctx (zip fs ts)
               in typeofExpr ctx' expr
         else typeError ["not a constructor of user type: ", id]
+    -- ts = type of fields
+    -- t' = actual user type
+             -- now need to add locals for the fields
     Nothing -> typeError ["constructor not found: ", id]
 
 typeofVars :: TypeContext -> [Var] -> Result TypeContext
@@ -238,10 +249,9 @@ typeofPred c (PredBinOp _ p1 p2) = do
 typeofPred c (PredComp _ e1 e2) = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
-  case (t1, t2)
+  case (t1, t2) of
     -- comparisons of all integer literals is allowed? because it's obvious?
     -- bit cases
-        of
     (TypeBits b1, TypeBits b2) ->
       if b1 == b2
         then return ()
@@ -249,6 +259,14 @@ typeofPred c (PredComp _ e1 e2) = do
     -- range cases (comparisons of any ranges are okay?)
     (TypeRange _ _, TypeRange _ _) -> return ()
     _ -> typeError ["comparison of incompatible types"]
+typeofPred _ (PredPressed n _) =
+  if n == 1 || n == 2
+    then return ()
+    else typeError ["controller number out of bounds"]
+typeofPred _ (PredHolding n _) =
+  if n == 1 || n == 2
+    then return ()
+    else typeError ["controller number out of bounds"]
 
 constantType :: Int -> Type
 constantType i

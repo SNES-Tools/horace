@@ -102,6 +102,8 @@ data Pred
   | PredUnOp PredUnOp Pred
   | PredBinOp PredBinOp Pred Pred
   | PredComp CompOp Expr Expr
+  | PredPressed Int Button
+  | PredHolding Int Button
   deriving (Show)
 
 data PredUnOp =
@@ -125,3 +127,18 @@ data CompOp
   | CompGeS
   | CompGeqS
   deriving (Show)
+
+data Button
+  = ButtonA
+  | ButtonX
+  | ButtonL
+  | ButtonR
+  | ButtonB
+  | ButtonY
+  | ButtonSELECT
+  | ButtonSTART
+  | ButtonUP
+  | ButtonDOWN
+  | ButtonLEFT
+  | ButtonRIGHT
+  deriving Show
