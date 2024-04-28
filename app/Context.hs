@@ -97,8 +97,8 @@ lookupCG id ctx =
   case lookupOff 1 id (lvarDict ctx) of
     Just off -> Local off
     Nothing ->
-      case lookupOff 0x12 id (mvarDict ctx) of
-      -- magic number
+      case lookupOff 0x1A id (mvarDict ctx) of
+      -- magic number (changes depending on extra global variables...)
         Just addr -> Absolute addr
         Nothing -> error $ "lookupCG failed on " ++ id
   where

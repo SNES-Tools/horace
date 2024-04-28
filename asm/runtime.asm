@@ -46,7 +46,7 @@ ORG $00FFE0
 
 ;;    INITIALIZATION ROUTINES
 
-ORG $C0FD50       ; bank 0 mirror starts at $008000
+ORG $C0FD00       ; bank 0 mirror starts at $008000
 I_RESET:
     SEI           ; set interrupt disable
     CLC           ; clear carry flag
@@ -93,6 +93,7 @@ I_NMI:
     ; todo implement a proper context switch
     ; SAVE/RESET EVERYTHING!!
     PHA
+    PHX
     PHP
     LDA.W RDNMI   ; read for NMI acknowledge
 
@@ -101,9 +102,31 @@ I_NMI:
 
     NOP   #30
 
+    ; read controller information
+    SEP   #$20
+-   LDA.W HVBJOY
+    AND.B #%1
+    BNE   -
+    REP  #$30
+
+    LDA.W CNTRL1
+    TAX
+    STA.B $14
+    LDA.B $12
+    TRB.B $14
+    STX.B $12
+
+    LDA.W CNTRL2
+    TAX
+    STA.B $18
+    LDA.B $16
+    TRB.B $18
+    STX.B $16
+
     JSL   vblank  ; COMPILED CODE: VBLANK ROUTINE
 
     PLP
+    PLX
     PLA
     RTI           ; ReTurn from Interrupt
 
