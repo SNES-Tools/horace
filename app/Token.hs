@@ -86,4 +86,7 @@ data Token
   | TokenButtonDOWN
   | TokenButtonLEFT
   | TokenButtonRIGHT
+  -- palette stuff
+  | TokenPalettes
+  | TokenSprite
   deriving (Show)

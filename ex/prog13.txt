@@ -1,4 +1,7 @@
 mode ConTest {
+  palettes {
+    Red: sprite = [(1, 2, 3), (00, 00, 00)]
+  }
   types {
   }
   state {

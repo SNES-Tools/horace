@@ -114,6 +114,7 @@ data Instruction
   | XBA
   | XCE
   | Label String -- here is the label
+  | TableDataWord [Word16]
   | Table [String]
   deriving (Show)
 
@@ -534,6 +535,9 @@ instance Pretty Instruction where
   pretty (Label s) = group (pretty s <> pretty ":")
   pretty (Table ss) =
     indent 4 (group ((pretty "dw") <+> pretty (intercalate "," ss)))
+  pretty (TableDataWord ws) =
+    indent 4 (group ((pretty "dw") <+> pretty (intercalate "," (map show ws))))
+    -- use of show is no longer pretty printing :(
 
 instance Pretty Operand where
   pretty (Imm8 w) = pretty ".B" <+> pretty "#" <> pretty w

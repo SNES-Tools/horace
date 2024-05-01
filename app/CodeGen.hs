@@ -42,6 +42,7 @@ codeGenMode mode = do
           , mvarDict = map (\(MVar id t _) -> (id, t)) (modeVars mode)
           , lvarDict = []
           }
+  pals <- codeGenPals (modePals mode)
   init <- codeGenMVars ctx (modeVars mode)
   funcs <- codeGenFuncs ctx (modeFuncs mode)
   main <- codeGenExpr ctx (modeMain mode)
@@ -51,6 +52,8 @@ codeGenMode mode = do
         , [Label "main"]
         , main
         , [RTL]
+        , [Label "palettes"]
+        , pals
         , [Label "init"]
         , init
         , [RTL]
@@ -79,6 +82,23 @@ codeGenFunc ctx ins (Func name ps _ expr) = do
           ctx
   body <- codeGenExpr ctx' expr
   return $ concat [ins, [Label name], body, [RTL]]
+
+-- each instruction corresponds to one palette
+codeGenPals :: [Palette] -> Unique [Instruction]
+codeGenPals = foldM codeGenPal []
+
+codeGenPal :: [Instruction] -> Palette -> Unique [Instruction]
+codeGenPal ins (Palette _ _ colors) =
+  return
+    $ concat
+        [ ins
+        -- convert Palette to list of colors
+        , [ TableDataWord
+              $ map
+                  (\(r, g, b) -> fromIntegral $ shift b 10 .|. shift g 5 .|. r)
+                  colors
+          ]
+        ]
 
 codeGenExpr :: CodeContext -> Expr -> Unique [Instruction]
 codeGenExpr ctx (ExprLit num) = return [LDA $ Imm16 (fromIntegral num)]

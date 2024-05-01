@@ -7,12 +7,19 @@ type Id = String
 -- Mode stuff
 
 data Mode = Mode { modeName :: Id
+                 , modePals :: [Palette]
                  , modeTypes :: [UserType]
                  , modeVars :: [MVar]
                  , modeMain :: Expr
                  , modeFuncs :: [Func]
                  }
             deriving Show
+
+data Palette = Palette { palName :: Id
+                       , palType :: Type
+                       , palCols :: [(Word, Word, Word)]
+                       }
+                       deriving Show
 
 data UserType = UserType { utypeName :: Id,
                            utypeCons :: [Variant] } deriving Show

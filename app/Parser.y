@@ -63,6 +63,9 @@ import Type
   DOWN    { TokenButtonDOWN }
   LEFT    { TokenButtonLEFT }
   RIGHT   { TokenButtonRIGHT }
+
+  palettes  { TokenPalettes }
+  sprite    { TokenSprite }
     
   '+'   { TokenPlus }
   '-'   { TokenMinus }
@@ -105,7 +108,21 @@ import Type
 
 %%
 
-mode_decl : mode Id '{' types_decl state_decl main_decl func_decl '}'    { Mode $2 $4 $5 $6 $7 }
+mode_decl : mode Id '{' pal_decl types_decl state_decl main_decl func_decl '}'    { Mode $2 $4 $5 $6 $7 $8 }
+
+pal_decl : palettes '{' pal_list '}'    { $3 }
+
+pal_list :                  { [] }
+         | pal pal_list     { $1 : $2 }
+
+pal      : Id ':' pal_type '=' '[' color_list ']'    { Palette $1 $3 $6 }
+
+pal_type : sprite { TypePalette PalSprite }
+
+color_list  : color                { [$1] }
+            | color ',' color_list { $1 : $3 }
+
+color : '(' int ',' int ',' int ')'   { (fromIntegral $2, fromIntegral $4, fromIntegral $6) }
 
 types_decl : types '{' type_list '}'    { $3 }
 

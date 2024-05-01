@@ -96,6 +96,9 @@ lexVar cs =
     ("DOWN", rest)    -> TokenButtonDOWN : lexer rest
     ("LEFT", rest)    -> TokenButtonLEFT : lexer rest
     ("RIGHT", rest)   -> TokenButtonRIGHT : lexer rest
+    -- palettes
+    ("palettes", rest) -> TokenPalettes : lexer rest
+    ("sprite", rest)   -> TokenSprite : lexer rest
     -- literals
     ("r", '-':rest) -> TokenRInt (-(read num)) : lexer rest'
       where (num, rest') = span isDigit rest

@@ -64,6 +64,34 @@ F_RESET:
     LDA.B #$C0    ; automatic read of the SNES read the first pair of JoyPads
     STA.W WRIO    ; IO Port Write Register
 
+    ;; Palette uploader:
+    ;; This is a bad implementation, for many reasons. (see commit message)
+    PHP
+
+    SEP   #$20      ; A 8-bit
+    REP   #$10      ; XY 16-bit
+
+    ; set CGRAM address parameter
+    LDA.B #$80
+    STA.W CGADD
+
+    ; the actual DMA stuff
+    LDA.B #<:palettes
+    STA.W DMAADDR+2
+    LDX.W #palettes
+    STX.W DMAADDR
+    LDA.B #CGDATA
+    STA.W DMAREG
+    LDY.W #128      ; half for palettes
+    STY.W DMACNT
+    LDA.B #(!DMA_2Byte1Addr|!DMA_AtoB|!DMA_ABusInc)
+    STA.W DMAPARAM
+    LDA.B #!Ch0
+    STA.W MDMAEN
+
+    PLP
+    ;; End palette uploader
+
     REP   #$20    ; 16-bit A
     SEP   #$10    ; 8-bit XY
 

@@ -20,6 +20,7 @@ typeCheckMode :: Mode -> Result ()
 typeCheckMode mode
   -- type check mode variables
  = do
+  typeCheckPalettes (modePals mode)
   let ctx = consContext consDict
   ctx <- foldM typeCheckState ctx (modeVars mode)
   -- type check functions
@@ -35,6 +36,23 @@ typeCheckMode mode
                 (consName cons, (consFields cons, TypeUser $ utypeName utype)))
              (utypeCons utype))
         (modeTypes mode)
+
+typeCheckPalettes :: [Palette] -> Result ()
+typeCheckPalettes = foldM (const typeCheckPalette) ()
+
+typeCheckPalette :: Palette -> Result ()
+typeCheckPalette (Palette name (TypePalette PalSprite) colors) =
+  if length colors /= 16
+    then typeError ["incorrect number of colors for sprite palette"]
+    else foldM
+           (\_ (r, g, b) ->
+              if validColor r && validColor g && validColor b
+                then return ()
+                else typeError ["invalid color specified for color"])
+           ()
+           colors
+  where
+    validColor n = 0 <= n && n < 32
 
 typeCheckState :: TypeContext -> MVar -> Result TypeContext
 typeCheckState ctx mvar = do
@@ -162,13 +180,13 @@ typeofExpr c (ExprAssign (LValId id) e) = do
   if t == t'
     then return t
     else typeError
-                  [ "types not equal for assignment to variable"
-                  , id
-                  , ": expected"
-                  , show t
-                  , " but got "
-                  , show t'
-                  ]
+           [ "types not equal for assignment to variable"
+           , id
+           , ": expected"
+           , show t
+           , " but got "
+           , show t'
+           ]
 typeofExpr c (ExprCall id args) = do
   ts <- mapM (typeofExpr c) args
   -- first, check type of args is okay

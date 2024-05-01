@@ -40,16 +40,21 @@ data Type
   | TypeRange Int Int
   | TypeUser String       -- name of string
   | TypeVoid
+  -- for palettes
+  | TypePalette PalType
   -- internal to code generator:
   | TypeLongPtr
   | TypeVariant Word      -- ID for variant tag
   | TypeDummy             -- dummy
+  deriving Show
 
-instance Show Type where
-  show (TypeBits n)    = "bits[" ++ show n ++ "]"
-  show (TypeRange l u) = "range[" ++ show l ++ "," ++ show u ++ "]"
-  show (TypeUser s)    = "data " ++ s
-  show TypeVoid        = "void"
+data PalType = PalSprite deriving Show
+
+--instance Show Type where
+--  show (TypeBits n)    = "bits[" ++ show n ++ "]"
+--  show (TypeRange l u) = "range[" ++ show l ++ "," ++ show u ++ "]"
+--  show (TypeUser s)    = "data " ++ s
+--  show TypeVoid        = "void"
 
 {-
   A syntactically-valid program may have illegal type declarations based on the
