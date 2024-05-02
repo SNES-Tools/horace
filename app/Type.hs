@@ -40,8 +40,9 @@ data Type
   | TypeRange Int Int
   | TypeUser String       -- name of string
   | TypeVoid
-  -- for palettes
+  -- for palettes/graphics
   | TypePalette PalType
+  | TypeGraphics GfxType
   -- internal to code generator:
   | TypeLongPtr
   | TypeVariant Word      -- ID for variant tag
@@ -49,6 +50,8 @@ data Type
   deriving Show
 
 data PalType = PalSprite deriving Show
+
+data GfxType = GfxSprite deriving Show
 
 --instance Show Type where
 --  show (TypeBits n)    = "bits[" ++ show n ++ "]"

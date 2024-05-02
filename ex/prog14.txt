@@ -1,7 +1,10 @@
 mode PalTest {
+  graphics {
+    Numbers: sprite = "../ex/graphics.gfx"
+  }
   palettes {
     Red: sprite = [ (00, 00, 00)
-                  , (00, 00, 00)
+                  , (30, 30, 30)
                   , (00, 00, 00)
                   , (00, 00, 00)
                   , (00, 00, 00)

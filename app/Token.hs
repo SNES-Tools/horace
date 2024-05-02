@@ -7,6 +7,8 @@ data Token
   | TokenIdC String
   | TokenCapId String
   | TokenCapIdC String
+  | TokenString String
+  --
   | TokenLBrace
   | TokenRBrace
   | TokenIf
@@ -87,6 +89,7 @@ data Token
   | TokenButtonLEFT
   | TokenButtonRIGHT
   -- palette stuff
+  | TokenGraphics
   | TokenPalettes
   | TokenSprite
   deriving (Show)

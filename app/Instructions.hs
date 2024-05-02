@@ -116,6 +116,7 @@ data Instruction
   | Label String -- here is the label
   | TableDataWord [Word16]
   | Table [String]
+  | IncBin String
   deriving (Show)
 
 {-
@@ -538,6 +539,7 @@ instance Pretty Instruction where
   pretty (TableDataWord ws) =
     indent 4 (group ((pretty "dw") <+> pretty (intercalate "," (map show ws))))
     -- use of show is no longer pretty printing :(
+  pretty (IncBin s) = pretty $ "incbin \"" ++ s ++ "\""
 
 instance Pretty Operand where
   pretty (Imm8 w) = pretty ".B" <+> pretty "#" <> pretty w

@@ -7,6 +7,7 @@ type Id = String
 -- Mode stuff
 
 data Mode = Mode { modeName :: Id
+                 , modeGfxs :: [Graphics]
                  , modePals :: [Palette]
                  , modeTypes :: [UserType]
                  , modeVars :: [MVar]
@@ -14,6 +15,12 @@ data Mode = Mode { modeName :: Id
                  , modeFuncs :: [Func]
                  }
             deriving Show
+
+data Graphics = Graphics { gfxName :: Id
+                         , gfxType :: Type
+                         , gfxSrc :: String
+                         }
+                         deriving Show
 
 data Palette = Palette { palName :: Id
                        , palType :: Type

@@ -46,6 +46,9 @@ lexer ('&':cs) = TokenAmphersand : lexer cs
 lexer ('|':cs) = TokenPipe : lexer cs
 lexer ('^':cs) = TokenCaret : lexer cs
 lexer ('.':cs) = TokenDot : lexer cs
+lexer ('"':cs) = TokenString string : lexer (tail rest)
+  where
+    (string, rest) = span ((/=) '"') cs
 
 lexNum cs = TokenInt (read num) : lexer rest
   where
@@ -97,6 +100,7 @@ lexVar cs =
     ("LEFT", rest)    -> TokenButtonLEFT : lexer rest
     ("RIGHT", rest)   -> TokenButtonRIGHT : lexer rest
     -- palettes
+    ("graphics", rest) -> TokenGraphics : lexer rest
     ("palettes", rest) -> TokenPalettes : lexer rest
     ("sprite", rest)   -> TokenSprite : lexer rest
     -- literals

@@ -46,7 +46,7 @@ ORG $00FFE0
 
 ;;    INITIALIZATION ROUTINES
 
-ORG $C0FD00       ; bank 0 mirror starts at $008000
+ORG $C0FC00       ; bank 0 mirror starts at $008000
 I_RESET:
     SEI           ; set interrupt disable
     CLC           ; clear carry flag
@@ -64,12 +64,32 @@ F_RESET:
     LDA.B #$C0    ; automatic read of the SNES read the first pair of JoyPads
     STA.W WRIO    ; IO Port Write Register
 
-    ;; Palette uploader:
+    ;; Palette and graphics uploader:
     ;; This is a bad implementation, for many reasons. (see commit message)
     PHP
 
     SEP   #$20      ; A 8-bit
     REP   #$10      ; XY 16-bit
+
+    ; GFX upload
+    LDA.B #!VINC_IncOnHi
+    STA.W VMAINC
+    LDX.W #$0000
+    STX.W VMADD
+
+    ; gfx dma
+
+    LDA.B #<:graphics
+    STA.W $4304
+    LDX.W #graphics
+    STX.W $4302
+    LDA.B #$18
+    STA.W $4301
+    LDY.W #$1000
+    STY.W $4305
+    LDA.B #$01
+    STA.W $4300
+    STA.W $420B   ; DMA enable
 
     ; set CGRAM address parameter
     LDA.B #$80

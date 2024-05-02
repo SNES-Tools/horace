@@ -1,0 +1,39 @@
+mode NestedPatternMatchingTest {
+  palettes {
+
+  }
+  types {
+    MaybeByte {
+      Just(bits[8]),
+      Nothing
+    }
+    Bool {
+      True,
+      False
+    }
+    Compound {
+      Pair(MaybeByte, Bool)
+    }
+  }
+  state {
+    x: MaybeByte = Just(200)
+    b: Bool = True
+  }
+  main {
+    var comp: Compound = Pair(Just(255), b)
+    match comp with {
+      Pair(j, c) -> match c with {
+                      True  -> 5
+                      False -> 4
+                    }
+    }
+  }
+  functions {
+    boolNot(q: Bool): Bool {
+      match q with {
+        True  -> False
+        False -> True
+      }
+    }
+  }
+}

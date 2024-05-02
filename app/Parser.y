@@ -25,6 +25,8 @@ import Type
   idc   { TokenIdC $$ }
   Id    { TokenCapId $$ }
   Idc   { TokenCapIdC $$ }
+
+  str   { TokenString $$ }
   
   var   { TokenVar }
   bits  { TokenBits }
@@ -65,6 +67,8 @@ import Type
   RIGHT   { TokenButtonRIGHT }
 
   palettes  { TokenPalettes }
+  graphics  { TokenGraphics }
+  
   sprite    { TokenSprite }
     
   '+'   { TokenPlus }
@@ -108,7 +112,16 @@ import Type
 
 %%
 
-mode_decl : mode Id '{' pal_decl types_decl state_decl main_decl func_decl '}'    { Mode $2 $4 $5 $6 $7 $8 }
+mode_decl : mode Id '{' gfx_decl pal_decl types_decl state_decl main_decl func_decl '}'    { Mode $2 $4 $5 $6 $7 $8 $9 }
+
+gfx_decl : graphics '{' gfx_list '}'    { $3 }
+
+gfx_list :              { [] }
+         | gfx gfx_list { $1 : $2 }
+
+gfx      : Id ':' gfx_type '=' str     { Graphics $1 $3 $5 }
+
+gfx_type : sprite { TypeGraphics GfxSprite }
 
 pal_decl : palettes '{' pal_list '}'    { $3 }
 

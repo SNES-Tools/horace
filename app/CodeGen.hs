@@ -42,6 +42,7 @@ codeGenMode mode = do
           , mvarDict = map (\(MVar id t _) -> (id, t)) (modeVars mode)
           , lvarDict = []
           }
+  gfxs <- codeGenGfxs (modeGfxs mode)
   pals <- codeGenPals (modePals mode)
   init <- codeGenMVars ctx (modeVars mode)
   funcs <- codeGenFuncs ctx (modeFuncs mode)
@@ -52,6 +53,8 @@ codeGenMode mode = do
         , [Label "main"]
         , main
         , [RTL]
+        , [Label "graphics"]
+        , gfxs
         , [Label "palettes"]
         , pals
         , [Label "init"]
@@ -82,6 +85,12 @@ codeGenFunc ctx ins (Func name ps _ expr) = do
           ctx
   body <- codeGenExpr ctx' expr
   return $ concat [ins, [Label name], body, [RTL]]
+
+codeGenGfxs :: [Graphics] -> Unique [Instruction]
+codeGenGfxs = foldM codeGenGfx []
+
+codeGenGfx :: [Instruction] -> Graphics -> Unique [Instruction]
+codeGenGfx ins (Graphics _ _ file) = return $ ins ++ [IncBin file]
 
 -- each instruction corresponds to one palette
 codeGenPals :: [Palette] -> Unique [Instruction]
