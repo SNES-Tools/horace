@@ -127,7 +127,7 @@ gfx_list :              { [] }
 
 gfx      : Id ':' gfx_type '=' str     { Graphics $1 $3 $5 }
 
-gfx_type : spriteT { TypeGraphics GfxSprite }
+gfx_type : spriteT '[' int ']' { TypeGraphics (fromIntegral $3) }
 
 pal_decl : palettes '{' pal_list '}'    { $3 }
 
@@ -136,7 +136,7 @@ pal_list :                  { [] }
 
 pal      : Id ':' pal_type '=' '[' color_list ']'    { Palette $1 $3 $6 }
 
-pal_type : spriteT { TypePalette PalSprite }
+pal_type : spriteT { TypePalette }
 
 color_list  : color                { [$1] }
             | color ',' color_list { $1 : $3 }

@@ -20,8 +20,8 @@ typeCheckMode :: Mode -> Result ()
 typeCheckMode mode
   -- type check mode variables
  = do
-  typeCheckPalettes (modePals mode)
   let ctx = consContext consDict
+  ctx <- foldM typeCheckPalette ctx (modePals mode)
   ctx <- foldM typeCheckState ctx (modeVars mode)
   -- type check functions
   ctx <- foldM typeCheckFunc ctx (modeFuncs mode)
@@ -37,20 +37,19 @@ typeCheckMode mode
              (utypeCons utype))
         (modeTypes mode)
 
-typeCheckPalettes :: [Palette] -> Result ()
-typeCheckPalettes = foldM (const typeCheckPalette) ()
-
-typeCheckPalette :: Palette -> Result ()
-typeCheckPalette (Palette name (TypePalette PalSprite) colors) =
+typeCheckPalette :: TypeContext -> Palette -> Result TypeContext
+typeCheckPalette ctx (Palette name TypePalette colors) =
   if length colors /= 16
     then typeError ["incorrect number of colors for sprite palette"]
-    else foldM
-           (\_ (r, g, b) ->
-              if validColor r && validColor g && validColor b
-                then return ()
-                else typeError ["invalid color specified for color"])
-           ()
-           colors
+    else do
+      foldM
+        (\_ (r, g, b) ->
+           if validColor r && validColor g && validColor b
+             then return ()
+             else typeError ["invalid color specified for color"])
+        ()
+        colors
+      return $ extendPal (name, TypePalette) ctx
   where
     validColor n = 0 <= n && n < 32
 

@@ -41,8 +41,8 @@ data Type
   | TypeUser String       -- name of string
   | TypeVoid
   -- for palettes/graphics
-  | TypePalette PalType
-  | TypeGraphics GfxType
+  | TypePalette  -- no fields, we are using offset into dictionary as index
+  | TypeGraphics Word -- number of tiles defined in file (?)
   -- internal to code generator:
   | TypeLongPtr
   | TypeVariant Word      -- ID for variant tag
