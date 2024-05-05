@@ -37,6 +37,9 @@ typeCheckMode mode
              (utypeCons utype))
         (modeTypes mode)
 
+typeCheckGraphics :: TypeContext -> Graphics -> Result TypeContext
+typeCheckGraphics ctx (Graphics name typ _) = return $ extendGfx (name, typ) ctx
+
 typeCheckPalette :: TypeContext -> Palette -> Result TypeContext
 typeCheckPalette ctx (Palette name TypePalette colors) =
   if length colors /= 16

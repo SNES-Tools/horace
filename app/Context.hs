@@ -67,6 +67,9 @@ lookupFunc id (Context fs _ _ cs _ _ _) = lookup id (fs ++ cs)
 extendFunc :: (Id, f) -> Context a f -> Context a f
 extendFunc f (Context fs gs ps cs ts ms ls) = Context (f : fs) gs ps cs ts ms ls
 
+extendGfx :: (Id, a) -> Context a f -> Context a f
+extendGfx g (Context fs gs ps cs ts ms ls) = Context fs (g : gs) ps cs ts ms ls
+
 extendPal :: (Id, a) -> Context a f -> Context a f
 extendPal p (Context fs gs ps cs ts ms ls) = Context fs gs (p : ps) cs ts ms ls
 
