@@ -38,6 +38,7 @@ codeGenMode mode = do
                         vs)
                      0)
                 (modeTypes mode)
+          , palsDict = map (\(Palette n t _) -> (n, t)) (modePals mode)
           , gvarDict = []
           , mvarDict = map (\(MVar id t _) -> (id, t)) (modeVars mode)
           , lvarDict = []
