@@ -85,7 +85,7 @@ F_RESET:
     STX.W $4302
     LDA.B #$18
     STA.W $4301
-    LDY.W #$1000
+    LDY.W #$1000  ; <- hardcoded $1000 bytes to move
     STY.W $4305
     LDA.B #$01
     STA.W $4300
@@ -111,6 +111,27 @@ F_RESET:
 
     PLP
     ;; End palette uploader
+
+    ; set only sprite layer visible
+    LDA.B #!Through_OBJ
+    STA.W TM
+
+    ; initialize OAM mirror in WRAM
+    SEP   #$20
+    REP   #$10
+
+    LDX.W #508
+    LDA.B #$01
+    ; initializing table 1
+-   STA.L $7E2000,X
+    DEX   #4
+    BPL -
+    ; initializing table 2
+    LDA.B #%01010101
+    LDX.W #31
+-   STA.L $7E2000+512,X
+    DEX
+    BPL -
 
     REP   #$20    ; 16-bit A
     SEP   #$10    ; 8-bit XY
@@ -145,6 +166,11 @@ I_NMI:
     PHP
     LDA.W RDNMI   ; read for NMI acknowledge
 
+    SEP.B #$20    ; enable F-Blank
+
+    LDA.B #$80
+    STA   INIDISP  ; begin F-blank: in theory, should know everything can
+                   ; compelte in time so that this is not needed
     REP   #$20
     SEP   #$10
 
@@ -172,6 +198,26 @@ I_NMI:
     STX.B $16
 
     JSL   vblank  ; COMPILED CODE: VBLANK ROUTINE
+
+    SEP   #$10
+
+    STZ.W OAMADD
+    LDX.B #OAMDATA
+    STX.W DMAREG
+    LDX.B #(!DMA_AtoB|!DMA_ABusInc|!DMA_2Byte1Addr)
+    STX.W DMAPARAM
+    LDA.W #$2000  ; hardcoded location of OAM mirror in WRAM
+    LDX.B #$7E
+    STA.W DMAADDR
+    STX.W DMAADDR+2
+    LDA.W #544
+    STA.W DMACNT
+    LDX.B #%1
+    STX.W MDMAEN
+
+    SEP   #$20
+    LDA.B #$0F
+    STA   INIDISP ; end F-Blank
 
     PLP
     PLX
