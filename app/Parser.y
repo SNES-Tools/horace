@@ -188,7 +188,10 @@ sprite_decl : sprites '{' sprite_list '}' { $3 }
 sprite_list :                           { [] }
             | sprite sprite_list        { $1 : $2 }
 
-sprite : Id '{' anim_decl state_decl meth_decl '}'  { Sprite $1 $3 $4 $5 }
+sprite : Idc ids ')' '{' anim_decl state_decl meth_decl '}'  { Sprite $1 $2 $5 $6 $7 }
+
+ids       : id                          { [$1] }
+          | id ',' ids                  { $1 : $3 }
 
 anim_decl : anims '{' anim_list '}'     { $3 }
 

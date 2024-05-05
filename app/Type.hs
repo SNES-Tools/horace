@@ -43,6 +43,7 @@ data Type
   -- for palettes/graphics
   | TypePalette  -- no fields, we are using offset into dictionary as index
   | TypeGraphics Word -- number of tiles defined in file (?)
+  | TypeAnimation
   -- internal to code generator:
   | TypeLongPtr
   | TypeVariant Word      -- ID for variant tag

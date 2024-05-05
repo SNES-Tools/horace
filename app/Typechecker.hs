@@ -25,6 +25,7 @@ typeCheckMode mode
   ctx <- foldM typeCheckState ctx (modeVars mode)
   -- type check functions
   ctx <- foldM typeCheckFunc ctx (modeFuncs mode)
+  ctx <- foldM typeCheckSprite ctx (modeSprites mode)
   _ <- typeofExpr ctx (modeMain mode)
   return ()
   where
@@ -85,6 +86,51 @@ typeCheckFunc ctx f = do
   if t == t'
     then return $ extendFunc (id, (map paramType ps, t)) ctx
     else typeError ["function", show id, "return type does not match"]
+
+typeCheckSprite :: TypeContext -> Sprite -> Result TypeContext
+typeCheckSprite ctx (Sprite name insts anims state meths) = do
+  -- sprites should not have access to other sprite instances
+  -- but maybe they do?
+  ctx' <- foldM typeCheckSVar ctx state
+  ctx' <- foldM typeCheckAnim ctx' anims
+  ctx' <- foldM (typeCheckMeth name) ctx' meths
+  return $ foldr extendSprite ctx [(inst, TypeSprite name) | inst <- insts]
+
+typeCheckAnim :: TypeContext -> Animation -> Result TypeContext
+typeCheckAnim ctx (Animation name _) =
+  return $ extendAnim (name, TypeAnimation) ctx
+
+typeCheckSVar :: TypeContext -> MVar -> Result TypeContext
+typeCheckSVar ctx mvar = do
+  let id = mvarName mvar
+  let e = mvarInit mvar
+  let t = mvarType mvar
+  t' <- typeofExpr ctx e
+  if isValidStateType t
+    then if t == t'
+           then return $ extendSVar (id, t) ctx
+           else typeError
+                  [ "types not equal for assignment to variable"
+                  , id
+                  , ": expected"
+                  , show t
+                  , " but got "
+                  , show t'
+                  ]
+    else typeError ["not valid type for state"]
+
+typeCheckMeth :: Id -> TypeContext -> Func -> Result TypeContext
+typeCheckMeth name ctx (Func id ps t e) = do
+  t' <-
+    typeofExpr
+      (setLocals
+         ((zip (map paramName ps) (map paramType ps))
+            ++ [("self", TypeSprite name)])
+         ctx)
+      e
+  if t == t'
+    then return $ extendFunc (id, (map paramType ps, t)) ctx -- think extendFunc
+    else typeError ["method", show id, "return type does not match"]
 
 -- type checker for the core expression
 -- it is well-typed if we can find a type for it I think

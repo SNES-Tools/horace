@@ -44,7 +44,7 @@ mode PalTest {
   functions {
   }
   sprites {
-    Foo {
+    Foo(foo, bar) {
       animations {
         Test {
           at (0, 0): Numbers[0] in Red
@@ -55,11 +55,10 @@ mode PalTest {
         }
       }
       state {
-        x: range[0, 12] = 6
+        x: range[0, 12] = transmute[0, 12](r6)
       }
       methods {
         run(): void {
-          draw[Test](1, 2)
         }
       }
     }

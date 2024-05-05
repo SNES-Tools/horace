@@ -48,6 +48,7 @@ data Param = Param { paramName :: Id
                    , paramType :: Type } deriving Show
 
 data Sprite = Sprite { spriteName :: Id
+                     , spriteInstances :: [Id]
                      , spriteAnims :: [Animation]
                      , spriteState :: [MVar]
                      , spriteMeths :: [Func]
@@ -83,7 +84,7 @@ data Expr
   | ExprDraw Id Expr Expr       -- draw[anim](x, y)
   | ExprConstruct Id [Expr]
   | ExprIf Pred Expr Expr
-  | ExprMatch Expr [Case]       -- not planned to be supported yet
+  | ExprMatch Expr [Case]
   | ExprFor Id Expr Expr Expr   -- not planned to be supported yet
   | ExprUnOp UnOp Expr
   | ExprBinOp BinOp Expr Expr

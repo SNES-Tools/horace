@@ -12,6 +12,7 @@ data Context a f = Context
   , gfxDict :: Dict a
   , palsDict :: Dict a
   , animDict :: Dict a
+  , spriteDict :: Dict a
   , consDict :: Dict f
   , gvarDict :: Dict a
   , mvarDict :: Dict a
@@ -32,6 +33,7 @@ emptyContext =
     , gfxDict = []
     , palsDict = []
     , animDict = []
+    , spriteDict = []
     , consDict = []
     , gvarDict = []
     , mvarDict = []
@@ -45,6 +47,7 @@ funcContext fs =
     , gfxDict = []
     , palsDict = []
     , animDict = []
+    , spriteDict = []
     , consDict = []
     , gvarDict = []
     , mvarDict = []
@@ -58,6 +61,7 @@ mvarContext mvars =
     , gfxDict = []
     , palsDict = []
     , animDict = []
+    , spriteDict = []
     , consDict = []
     , gvarDict = []
     , mvarDict = mvars
@@ -71,6 +75,7 @@ consContext cons =
     , gfxDict = []
     , palsDict = []
     , animDict = []
+    , spriteDict = []
     , consDict = cons
     , gvarDict = [] -- `g` now means sprite, not global lol
     , mvarDict = []
@@ -82,45 +87,58 @@ lookupCons :: Id -> Context a f -> Maybe f
 lookupCons id (Context {consDict = cs}) = lookup id cs
 
 lookupVar :: Id -> Context a f -> Maybe a
-lookupVar id (Context _ _ _ _ _ gs ms ls) = lookup id (ls ++ ms ++ gs)
+lookupVar id (Context _ _ _ _ _ _ gs ms ls) = lookup id (ls ++ ms ++ gs)
 
 lookupFunc :: Id -> Context a f -> Maybe f
-lookupFunc id (Context fs _ _ _ cs _ _ _) = lookup id (fs ++ cs)
+lookupFunc id (Context fs _ _ _ _ cs _ _ _) = lookup id (fs ++ cs)
 
 extendFunc :: (Id, f) -> Context a f -> Context a f
-extendFunc f (Context fs gs ps as cs ts ms ls) =
-  Context (f : fs) gs ps as cs ts ms ls
+extendFunc f (Context fs gs ps as ss cs ts ms ls) =
+  Context (f : fs) gs ps as ss cs ts ms ls
 
 extendGfx :: (Id, a) -> Context a f -> Context a f
-extendGfx g (Context fs gs ps as cs ts ms ls) =
-  Context fs (g : gs) ps as cs ts ms ls
+extendGfx g (Context fs gs ps as ss cs ts ms ls) =
+  Context fs (g : gs) ps as ss cs ts ms ls
 
 extendPal :: (Id, a) -> Context a f -> Context a f
-extendPal p (Context fs gs ps as cs ts ms ls) =
-  Context fs gs (p : ps) as cs ts ms ls
+extendPal p (Context fs gs ps as ss cs ts ms ls) =
+  Context fs gs (p : ps) as ss cs ts ms ls
+
+extendAnim :: (Id, a) -> Context a f -> Context a f
+extendAnim a (Context fs gs ps as ss cs ts ms ls) =
+  Context fs gs ps (a : as) ss cs ts ms ls
+
+extendSprite :: (Id, a) -> Context a f -> Context a f
+extendSprite s (Context fs gs ps as ss cs ts ms ls) =
+  Context fs gs ps as (s : ss) cs ts ms ls
 
 extendCons :: (Id, f) -> Context a f -> Context a f
-extendCons c (Context fs gs ps as cs ts ms ls) =
-  Context fs gs ps as (c : cs) ts ms ls
+extendCons c (Context fs gs ps as ss cs ts ms ls) =
+  Context fs gs ps as ss (c : cs) ts ms ls
+
+extendSVar :: (Id, a) -> Context a f -> Context a f
+extendSVar g (Context fs gs ps as ss cs ts ms ls) =
+  Context fs gs ps as ss cs (g : ts) ms ls
 
 extendMVar :: (Id, a) -> Context a f -> Context a f
-extendMVar m (Context fs gs ps as cs ts ms ls) =
-  Context fs gs ps as cs ts (m : ms) ls
+extendMVar m (Context fs gs ps as ss cs ts ms ls) =
+  Context fs gs ps as ss cs ts (m : ms) ls
 
 extendLocal :: (Id, a) -> Context a f -> Context a f
-extendLocal l (Context fs gs ps as cs ts ms ls) =
-  Context fs gs ps as cs ts ms (l : ls)
+extendLocal l (Context fs gs ps as ss cs ts ms ls) =
+  Context fs gs ps as ss cs ts ms (l : ls)
 
 setLocals :: [(Id, a)] -> Context a f -> Context a f
-setLocals ls (Context fs gs ps as cs ts ms _) = Context fs gs ps as cs ts ms ls
+setLocals ls (Context fs gs ps as ss cs ts ms _) =
+  Context fs gs ps as ss cs ts ms ls
 
 replaceVar :: Id -> a -> Context a f -> Context a f
-replaceVar id x (Context fs gs ps as cs ts ms ls) =
+replaceVar id x (Context fs gs ps as ss cs ts ms ls) =
   case replace id x ms of
-    Just ms' -> Context fs gs ps as cs ts ms' ls
+    Just ms' -> Context fs gs ps as ss cs ts ms' ls
     Nothing ->
       case replace id x ls of
-        Just ls' -> Context fs gs ps as cs ts ms ls'
+        Just ls' -> Context fs gs ps as ss cs ts ms ls'
         Nothing -> error "Replacement failed"
 
 data LookupCG
