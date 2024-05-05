@@ -144,6 +144,7 @@ replaceVar id x (Context fs gs ps as ss cs ts ms ls) =
 data LookupCG
   = Absolute Word
   | Local Word
+  | AbsLong Word
   deriving (Show)
 
 -- lookupCodeGen
@@ -155,7 +156,11 @@ lookupCG id ctx =
       case lookupOff 0x1A id (mvarDict ctx) of
       -- magic number (changes depending on extra global variables...)
         Just addr -> Absolute addr
-        Nothing -> error $ "lookupCG failed on " ++ id
+        Nothing ->
+          case lookupOff 0x7E3000 id (gvarDict ctx) of
+              -- magic number (changes depending on extra global variables...)
+            Just addr -> AbsLong addr
+            Nothing -> error $ "LookupCG failed on " ++ id
   where
     lookupOff off key ((id, t):rest) =
       if key == id

@@ -62,5 +62,14 @@ mode PalTest {
         }
       }
     }
+    SpriteTwo(cake) {
+      animations { }
+      state {
+        zz: bits[8] = 200
+        zzz: bits[8] = 201
+        zzzz: bits[8] = 255
+      }
+      methods { }
+    }
   }
 }

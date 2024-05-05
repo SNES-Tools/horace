@@ -38,15 +38,26 @@ codeGenMode mode = do
                         vs)
                      0)
                 (modeTypes mode)
-          , gfxDict  = map (\(Graphics n t _) -> (n, t)) (modeGfxs mode)
+          , gfxDict = map (\(Graphics n t _) -> (n, t)) (modeGfxs mode)
           , palsDict = map (\(Palette n t _) -> (n, t)) (modePals mode)
-          , gvarDict = []
+          , spriteDict =
+              concatMap
+                (\(Sprite n i _ _ _) -> [(i', TypeSprite n) | i' <- i])
+                (modeSprites mode)
+          , gvarDict =
+              concatMap
+                (\(Sprite _ i _ s _) ->
+                   concatMap
+                     (\i' -> map (\(MVar id t _) -> (i' ++ "." ++ id, t)) s)
+                     i)
+                (modeSprites mode)
           , mvarDict = map (\(MVar id t _) -> (id, t)) (modeVars mode)
           , lvarDict = []
           }
   gfxs <- codeGenGfxs (modeGfxs mode)
   pals <- codeGenPals (modePals mode)
   init <- codeGenMVars ctx (modeVars mode)
+  svarInit <- codeGenSpriteInits ctx (modeSprites mode)
   funcs <- codeGenFuncs ctx (modeFuncs mode)
   main <- codeGenExpr ctx (modeMain mode)
   return
@@ -61,6 +72,8 @@ codeGenMode mode = do
         , pals
         , [Label "init"]
         , init
+        , [Label "svar_init"]
+        , svarInit
         , [RTL]
         , [Label "vblank", RTL]
         ]
@@ -377,6 +390,24 @@ buttonToMask ButtonUP = 0x0800
 buttonToMask ButtonDOWN = 0x0400
 buttonToMask ButtonLEFT = 0x0200
 buttonToMask ButtonRIGHT = 0x0100
+
+codeGenSpriteInits :: CodeContext -> [Sprite] -> Unique [Instruction]
+codeGenSpriteInits ctx sprites =
+  let gvars =
+        concatMap
+          (\(Sprite _ i _ s _) ->
+             concatMap
+               (\i' -> map (\(MVar id t e) -> MVar (i' ++ "." ++ id) t e) s)
+               i)
+          sprites
+   in foldM (codeGenGVar ctx) [] gvars
+
+codeGenGVar :: CodeContext -> [Instruction] -> MVar -> Unique [Instruction]
+codeGenGVar ctx ins (MVar id t e)
+ = do
+  code <- codeGenExpr ctx e
+  let AbsLong x = lookupCG id ctx
+  return $ concat [ins, code, [STA (Long $ fromIntegral x)]]
 
 codeGenMVars :: CodeContext -> [MVar] -> Unique [Instruction]
 codeGenMVars ctx = foldM (codeGenMVar ctx) []
