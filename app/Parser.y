@@ -76,6 +76,7 @@ import Type
   meths     { TokenMethods }
   at        { TokenAt }
   in        { TokenIn }
+  draw      { TokenDraw }
       
   '+'   { TokenPlus }
   '-'   { TokenMinus }
@@ -187,7 +188,7 @@ sprite_decl : sprites '{' sprite_list '}' { $3 }
 sprite_list :                           { [] }
             | sprite sprite_list        { $1 : $2 }
 
-sprite : Id '{' anim_decl state_decl main_decl meth_decl '}'  { Sprite $1 $3 $4 $5 $6 }
+sprite : Id '{' anim_decl state_decl meth_decl '}'  { Sprite $1 $3 $4 $5 }
 
 anim_decl : anims '{' anim_list '}'     { $3 }
 
@@ -213,6 +214,7 @@ expr  : int                             { ExprLit $1 }
       | Idc args ')'                    { ExprConstruct $1 $2 }
       | Id                              { ExprConstruct $1 [] }
       | id '.' idc args ')'             { ExprMethodCall $1 $3 $4 }
+      | draw '[' Id ']' '(' expr ',' expr ')' { ExprDraw $3 $6 $8 }
       | match expr with '{' cases '}'   { ExprMatch $2 $5 }
       | trans '[' int ',' int ']' '(' expr ')'   { ExprUnOp (UnOpTransmute (Just (fromIntegral $3)) (Just (fromIntegral $5))) $8 }
       | ext '[' int ']' '(' expr ')'    { ExprUnOp (UnOpExtend (Just (fromIntegral $3))) $6 }

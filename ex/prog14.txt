@@ -57,10 +57,11 @@ mode PalTest {
       state {
         x: range[0, 12] = 6
       }
-      main {
-        x
+      methods {
+        run(): void {
+          draw[Test](1, 2)
+        }
       }
-      methods { }
     }
   }
 }

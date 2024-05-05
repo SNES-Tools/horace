@@ -50,7 +50,6 @@ data Param = Param { paramName :: Id
 data Sprite = Sprite { spriteName :: Id
                      , spriteAnims :: [Animation]
                      , spriteState :: [MVar]
-                     , spriteMain :: Expr
                      , spriteMeths :: [Func]
                      }
                    deriving Show
@@ -81,6 +80,7 @@ data Expr
   | ExprArrIndex Expr Expr      -- not planned to be supported yet
   | ExprCall Id [Expr]
   | ExprMethodCall Id Id [Expr] -- not planned to be supported yet
+  | ExprDraw Id Expr Expr       -- draw[anim](x, y)
   | ExprConstruct Id [Expr]
   | ExprIf Pred Expr Expr
   | ExprMatch Expr [Case]       -- not planned to be supported yet

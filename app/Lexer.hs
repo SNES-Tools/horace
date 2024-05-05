@@ -109,6 +109,7 @@ lexVar cs =
     ("methods", rest)    -> TokenMethods : lexer rest
     ("at", rest)         -> TokenAt : lexer rest
     ("in", rest)         -> TokenIn : lexer rest
+    ("draw", rest)       -> TokenDraw : lexer rest
     -- literals
     ("r", '-':rest) -> TokenRInt (-(read num)) : lexer rest'
       where (num, rest') = span isDigit rest

@@ -98,4 +98,5 @@ data Token
   | TokenMethods
   | TokenAt
   | TokenIn
+  | TokenDraw
   deriving (Show)
