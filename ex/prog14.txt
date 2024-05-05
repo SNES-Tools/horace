@@ -43,4 +43,24 @@ mode PalTest {
   }
   functions {
   }
+  sprites {
+    Foo {
+      animations {
+        Test {
+          at (0, 0): Numbers[0] in Red
+          at (0, 8): Numbers[1] in Red
+        }
+        TestTwo {
+          at (0, 0): Numbers[2] in Red
+        }
+      }
+      state {
+        x: range[0, 12] = 6
+      }
+      main {
+        x
+      }
+      methods { }
+    }
+  }
 }

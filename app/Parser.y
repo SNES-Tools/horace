@@ -69,8 +69,14 @@ import Type
   palettes  { TokenPalettes }
   graphics  { TokenGraphics }
   
-  sprite    { TokenSprite }
-    
+  spriteT   { TokenSprite }
+
+  sprites   { TokenSprites }
+  anims     { TokenAnimations }
+  meths     { TokenMethods }
+  at        { TokenAt }
+  in        { TokenIn }
+      
   '+'   { TokenPlus }
   '-'   { TokenMinus }
   '&'   { TokenAmphersand }
@@ -112,7 +118,7 @@ import Type
 
 %%
 
-mode_decl : mode Id '{' gfx_decl pal_decl types_decl state_decl main_decl func_decl '}'    { Mode $2 $4 $5 $6 $7 $8 $9 }
+mode_decl : mode Id '{' gfx_decl pal_decl types_decl state_decl main_decl func_decl sprite_decl '}'    { Mode $2 $4 $5 $6 $7 $8 $9 $10 }
 
 gfx_decl : graphics '{' gfx_list '}'    { $3 }
 
@@ -121,7 +127,7 @@ gfx_list :              { [] }
 
 gfx      : Id ':' gfx_type '=' str     { Graphics $1 $3 $5 }
 
-gfx_type : sprite { TypeGraphics GfxSprite }
+gfx_type : spriteT { TypeGraphics GfxSprite }
 
 pal_decl : palettes '{' pal_list '}'    { $3 }
 
@@ -130,7 +136,7 @@ pal_list :                  { [] }
 
 pal      : Id ':' pal_type '=' '[' color_list ']'    { Palette $1 $3 $6 }
 
-pal_type : sprite { TypePalette PalSprite }
+pal_type : spriteT { TypePalette PalSprite }
 
 color_list  : color                { [$1] }
             | color ',' color_list { $1 : $3 }
@@ -175,6 +181,27 @@ params :                                { [] }
        | param ',' params               { $1 : $3 }
 
 param : id ':' type_reg                 { Param $1 $3 }
+
+sprite_decl : sprites '{' sprite_list '}' { $3 }
+
+sprite_list :                           { [] }
+            | sprite sprite_list        { $1 : $2 }
+
+sprite : Id '{' anim_decl state_decl main_decl meth_decl '}'  { Sprite $1 $3 $4 $5 $6 }
+
+anim_decl : anims '{' anim_list '}'     { $3 }
+
+anim_list :                                 { [] }
+          | anim anim_list                  { $1 : $2 }
+
+anim : Id '{' tile_list '}'             { Animation $1 $3 }
+
+tile_list : tile                        { [$1] }
+          | tile tile_list              { $1 : $2 }
+
+tile : at '(' int ',' int ')' ':' Id '[' int ']' in Id  { Tile (fromIntegral $3) (fromIntegral $5) $8 (fromIntegral $10) $13 }
+
+meth_decl : meths '{' func_list '}'     { $3 }
 
 expr  : int                             { ExprLit $1 }
       | rint                            { ExprRLit $1 }

@@ -13,6 +13,7 @@ data Mode = Mode { modeName :: Id
                  , modeVars :: [MVar]
                  , modeMain :: Expr
                  , modeFuncs :: [Func]
+                 , modeSprites :: [Sprite]
                  }
             deriving Show
 
@@ -45,6 +46,27 @@ data Func = Func { funcName :: Id
 
 data Param = Param { paramName :: Id
                    , paramType :: Type } deriving Show
+
+data Sprite = Sprite { spriteName :: Id
+                     , spriteAnims :: [Animation]
+                     , spriteState :: [MVar]
+                     , spriteMain :: Expr
+                     , spriteMeths :: [Func]
+                     }
+                   deriving Show
+
+data Animation = Animation { animName :: Id
+                           , animTiles :: [Tile]
+                           }
+                         deriving Show
+
+data Tile = Tile { tileX :: Word
+                 , tileY :: Word
+                 , tileGfx :: Id
+                 , tileIdx :: Word
+                 , tilePal :: Id
+                 }
+             deriving Show
 
 -- Core Horace (Odes)
 

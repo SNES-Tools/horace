@@ -92,4 +92,10 @@ data Token
   | TokenGraphics
   | TokenPalettes
   | TokenSprite
+  -- sprite stuff
+  | TokenSprites
+  | TokenAnimations
+  | TokenMethods
+  | TokenAt
+  | TokenIn
   deriving (Show)

@@ -2,6 +2,7 @@ mode NestedPatternMatchingTest {
   palettes {
 
   }
+  graphics { }
   types {
     MaybeByte {
       Just(bits[8]),
@@ -36,4 +37,5 @@ mode NestedPatternMatchingTest {
       }
     }
   }
+  sprites { }
 }

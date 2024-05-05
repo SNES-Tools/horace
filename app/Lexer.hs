@@ -103,6 +103,12 @@ lexVar cs =
     ("graphics", rest) -> TokenGraphics : lexer rest
     ("palettes", rest) -> TokenPalettes : lexer rest
     ("sprite", rest)   -> TokenSprite : lexer rest
+    -- sprites
+    ("sprites", rest)    -> TokenSprites : lexer rest
+    ("animations", rest) -> TokenAnimations : lexer rest
+    ("methods", rest)    -> TokenMethods : lexer rest
+    ("at", rest)         -> TokenAt : lexer rest
+    ("in", rest)         -> TokenIn : lexer rest
     -- literals
     ("r", '-':rest) -> TokenRInt (-(read num)) : lexer rest'
       where (num, rest') = span isDigit rest
