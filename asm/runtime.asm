@@ -127,11 +127,11 @@ F_RESET:
     DEX   #4
     BPL -
     ; initializing table 2
-    LDA.B #%01010101
-    LDX.W #31
--   STA.L $7E2000+512,X
-    DEX
-    BPL -
+;    LDA.B #%01010101
+;    LDX.W #31
+;-   STA.L $7E2000+512,X
+;    DEX
+;    BPL -
 
     REP   #$20    ; 16-bit A
     SEP   #$10    ; 8-bit XY
@@ -218,6 +218,8 @@ I_NMI:
     SEP   #$20
     LDA.B #$0F
     STA   INIDISP ; end F-Blank
+
+    STZ.B $1A     ; reset OAM reservation
 
     PLP
     PLX

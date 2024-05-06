@@ -40,6 +40,7 @@ codeGenMode mode = do
                 (modeTypes mode)
           , gfxDict = map (\(Graphics n t _) -> (n, t)) (modeGfxs mode)
           , palsDict = map (\(Palette n t _) -> (n, t)) (modePals mode)
+          , animDict = []
           , spriteDict =
               concatMap
                 (\(Sprite _ i _ s _) ->
@@ -104,13 +105,26 @@ codeGenMeths :: CodeContext -> [Sprite] -> Unique [Instruction]
 codeGenMeths ctx sprites = do
   methods <-
     mapM
-      (\s ->
+      (\s -> do
          let ctx' =
                foldr
                  extendSVar
                  ctx
                  (map (\(MVar n t _) -> (n, t)) (spriteState s))
-          in foldM (codeGenMeth ctx') [] (spriteMeths s))
+         let ctx'' =
+               foldr
+                 extendAnim
+                 ctx'
+                 (map
+                    (\(Animation n tiles) ->
+                       ( n
+                       , TypeAnimationTiles
+                           $ map
+                               (\(Tile tx ty gfx idx pal) ->
+                                  (tx, ty, gfx, idx, pal))
+                               tiles))
+                    (spriteAnims s))
+         foldM (codeGenMeth ctx'') [] (spriteMeths s))
       sprites
   return $ concat methods
 
@@ -265,7 +279,7 @@ codeGenExpr ctx (ExprIf pred exprT exprF) = do
         [ codePred
         , [Label labelT]
         , codeT
-        , [BRA (Label8 labelEnd)]
+        , [BRL (Label16 labelEnd)]
         , [Label labelF]
         , codeF
         , [Label labelEnd]
@@ -343,6 +357,51 @@ codeGenExpr ctx (ExprMatch expr cases) = do
         , [Label labelTable]
         , codeCases
         ]
+codeGenExpr ctx (ExprDraw anim exprX exprY) = do
+  codeX <- codeGenExpr ctx exprX
+  codeY <- codeGenExpr (extendLocal ("", TypeDummy) ctx) exprY
+  let Just (TypeAnimationTiles tiles) = lookupAnim anim ctx
+  let tileCode =
+        concatMap
+          (\(x, y, _, off, pal) ->
+             let pal' = fromIntegral $ palNum 0 pal (palsDict ctx) -- deconstructing dict here, bad
+              in [ LDA (Dir 0x00)
+                 , CLC
+                 , ADC (Imm8 $ fromIntegral x)
+                 , STA (LongX 0x7E2000)
+                 , INX
+                 , LDA (Dir 0x02)
+                 , CLC
+                 , ADC (Imm8 $ fromIntegral y)
+                 , STA (LongX 0x7E2000)
+                 , INX
+                 , LDA (Imm8 $ fromIntegral off)
+                 , STA (LongX 0x7E2000)
+                 , INX
+                 , LDA (Imm8 $ pal' `shiftL` 1)
+                 , STA (LongX 0x7E2000)
+                 , INX
+                 ])
+          tiles
+  return
+    $ concat
+        [ codeX
+        , [PHA]
+        , codeY
+        , [STA (Dir 0x02)] -- $02 - base Y
+        , [PLA]
+        , [STA (Dir 0x00)] -- $00 - base X
+        , [SEP (Imm8 0x30)]
+        , [LDX (Dir 0x1A)]
+        , tileCode
+        , [STX (Dir 0x1A)]
+        , [REP (Imm8 0x30)]
+        ]
+  where
+    palNum n id ((id', _):ps) =
+      if id == id'
+        then n
+        else palNum (n + 1) id ps
 codeGenExpr _ ExprVoid = return []
 codeGenExpr _ e = error $ show e
 

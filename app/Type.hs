@@ -50,6 +50,7 @@ data Type
   | TypeVariant Word      -- ID for variant tag
   | TypeDummy             -- dummy
   | TypeSpriteSized Word  -- name, size
+  | TypeAnimationTiles [(Word, Word, String, Word, String)]
   deriving Show
 
 data PalType = PalSprite deriving Show

@@ -1,10 +1,10 @@
-mode PalTest {
+mode BallTest {
   graphics {
-    Numbers: sprite[10] = "../ex/graphics.gfx"
+    Graphics: sprite[2] = "../ex/graphics.gfx"
   }
   palettes {
     Red: sprite = [ (00, 00, 00)
-                  , (30, 30, 30)
+                  , (30, 00, 00)
                   , (00, 00, 00)
                   , (00, 00, 00)
                   , (00, 00, 00)
@@ -24,35 +24,18 @@ mode PalTest {
   types {
   }
   state {
-      counter: range[0, 100]   = transmute[0, 100](r0)
-      holder:  range[0, 10000] = transmute[0, 10000](r0)
   }
   main {
-    if pressed[1, UP] then
-        counter <- transmute[0, 100](counter + r1)
-    else if pressed[1, DOWN] then
-        counter <- transmute[0, 100](counter - r1)
-    else
-        counter
-        
-    if holding[1, A] then
-        holder <- transmute[0, 10000](holder + r1)
-    else
-        holder <- transmute[0, 10000](holder - r1)
-
-    foo.run()
+    ball.run()
   }
   functions {
   }
   sprites {
-    Foo(foo, bar) {
+    BallSprite(ball) {
       animations {
-        Test {
-          at (0, 0): Numbers[0] in Red
-          at (0, 8): Numbers[1] in Red
-        }
-        TestTwo {
-          at (0, 0): Numbers[2] in Red
+        BallFrame {
+          at (0, 0): Graphics[1] in Red
+          at (8, 0): Graphics[1] in Red
         }
       }
       state {
@@ -67,24 +50,17 @@ mode PalTest {
             x <- transmute[10, 200](x + r1)
           else 
             x
+            
           if holding[1, UP] then
             y <- transmute[10, 200](y - r1)
           else if holding[1, DOWN] then
             y <- transmute[10, 200](y + r1)
           else
             y
-          draw[Test](x, y)
+            
+          draw[BallFrame](x, y)
         }
       }
-    }
-    SpriteTwo(cake) {
-      animations { }
-      state {
-        zz: bits[8] = 200
-        zzz: bits[8] = 201
-        zzzz: bits[8] = 255
-      }
-      methods { }
     }
   }
 }
