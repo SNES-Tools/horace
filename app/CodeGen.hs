@@ -44,13 +44,7 @@ codeGenMode mode = do
               concatMap
                 (\(Sprite n i _ _ _) -> [(i', TypeSprite n) | i' <- i])
                 (modeSprites mode)
-          , gvarDict =
-              concatMap
-                (\(Sprite _ i _ s _) ->
-                   concatMap
-                     (\i' -> map (\(MVar id t _) -> (i' ++ "." ++ id, t)) s)
-                     i)
-                (modeSprites mode)
+          , gvarDict = []
           , mvarDict = map (\(MVar id t _) -> (id, t)) (modeVars mode)
           , lvarDict = []
           }
@@ -392,7 +386,15 @@ buttonToMask ButtonLEFT = 0x0200
 buttonToMask ButtonRIGHT = 0x0100
 
 codeGenSpriteInits :: CodeContext -> [Sprite] -> Unique [Instruction]
-codeGenSpriteInits ctx sprites =
+codeGenSpriteInits ctx sprites = do
+  let ctx =
+        gvarContext
+          $ concatMap
+              (\(Sprite _ i _ s _) ->
+                 concatMap
+                   (\i' -> map (\(MVar id t _) -> (i' ++ "." ++ id, t)) s)
+                   i)
+              sprites
   let gvars =
         concatMap
           (\(Sprite _ i _ s _) ->
@@ -400,11 +402,10 @@ codeGenSpriteInits ctx sprites =
                (\i' -> map (\(MVar id t e) -> MVar (i' ++ "." ++ id) t e) s)
                i)
           sprites
-   in foldM (codeGenGVar ctx) [] gvars
+  foldM (codeGenGVar ctx) [] gvars
 
 codeGenGVar :: CodeContext -> [Instruction] -> MVar -> Unique [Instruction]
-codeGenGVar ctx ins (MVar id t e)
- = do
+codeGenGVar ctx ins (MVar id t e) = do
   code <- codeGenExpr ctx e
   let AbsLong x = lookupCG id ctx
   return $ concat [ins, code, [STA (Long $ fromIntegral x)]]

@@ -54,6 +54,20 @@ funcContext fs =
     , lvarDict = []
     }
 
+gvarContext :: [(Id, a)] -> Context a f
+gvarContext gvars =
+  Context
+    { funcDict = []
+    , gfxDict = []
+    , palsDict = []
+    , animDict = []
+    , spriteDict = []
+    , consDict = []
+    , gvarDict = gvars
+    , mvarDict = []
+    , lvarDict = []
+    }
+
 mvarContext :: [(Id, a)] -> Context a f
 mvarContext mvars =
   Context
