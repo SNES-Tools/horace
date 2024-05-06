@@ -22,121 +22,42 @@ mode BallTest {
                   ]
   }
   types {
-    HorizDirection  { Left, Right }
-    VertDirection   { Up, Down }
   }
   state {
   }
   main {
-    cursor.run()
-    bouncingBall.runBouncingBall()
+    ball.run()
   }
   functions {
   }
   sprites {
-    Cursor(cursor) {
+    Ball(ball) {
       animations {
-        CursorFrame {
-          at (0, 0): Graphics[5] in Red
-          at (8, 0): Graphics[6] in Red
-          at (0, 8): Graphics[7] in Red
-          at (8, 8): Graphics[8] in Red
-          at (8, 16): Graphics[10] in Red
+        BallFrame {
+          at (0, 0): Graphics[9] in Red
         }
       }
       state {
-        x: range[8, 240] = transmute[8, 240](r50)
-        y: range[8, 208] = transmute[8, 208](r50)
+        x: range[32, 120] = transmute[32, 120](r50)
+        y: range[46, 100] = transmute[46, 100](r50)
       }
       methods {
         run(): void {
           if holding[1, LEFT] then
-            x <- transmute[8, 240](x - r1)
+            x <- transmute[32, 120](x - r1)
           else if holding[1, RIGHT] then
-            x <- transmute[8, 240](x + r1)
+            x <- transmute[32, 120](x + r1)
           else 
             x
             
           if holding[1, UP] then
-            y <- transmute[8, 208](y - r1)
+            y <- transmute[46, 100](y - r1)
           else if holding[1, DOWN] then
-            y <- transmute[8, 208](y + r1)
+            y <- transmute[46, 100](y + r1)
           else
             y
             
-          draw[CursorFrame](x, y)
-        }
-      }
-    }
-
-
-    BouncingBall(bouncingBall) {
-      animations {
-        BallUpRight {
-          at (0, 0): Graphics[1] in Red
-        }
-        BallUpLeft {
-          at (0, 0): Graphics[2] in Red
-        }
-        BallDownRight {
-          at (0, 0): Graphics[3] in Red
-        }
-        BallDownLeft {
-          at (0, 0): Graphics[4] in Red
-        }
-      }
-      state {
-        x: range[0, 248] = transmute[0, 248](r53)
-        y: range[0, 216] = transmute[0, 216](r80)
-        horizDir: HorizDirection = Right
-        vertDir:  VertDirection  = Down
-      }
-      methods {
-        runBouncingBall(): void {
-          match horizDir with {
-            Left  -> {
-              if x = r0 then
-                horizDir <- Right
-              else
-                horizDir
-              x <- transmute[0, 248](x - r1)
-            }
-            Right -> {
-              if x = r248 then
-                horizDir <- Left
-              else
-                horizDir
-              x <- transmute[0, 248](x + r1)
-            }
-          }
-
-          match vertDir with {
-            Up  -> {
-              if y = r0 then
-                vertDir <- Down
-              else
-                vertDir
-              y <- transmute[0, 216](y - r1)
-            }
-            Down -> {
-              if y = r216 then
-                vertDir <- Up
-              else
-                vertDir
-              y <- transmute[0, 216](y + r1)
-            }
-          }
-
-          match horizDir with {
-            Left -> match vertDir with {
-              Up   -> draw[BallUpLeft](x, y)
-              Down -> draw[BallDownLeft](x, y)
-            }
-            Right -> match vertDir with {
-              Up   -> draw[BallUpRight](x, y)
-              Down -> draw[BallDownRight](x, y)
-            }
-          }            
+          draw[BallFrame](x, y)
         }
       }
     }
