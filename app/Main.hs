@@ -37,7 +37,7 @@ main = do
     Just e  -> putStrLn $ "Type error: " ++ e
     Nothing -> do
                  putStrLn "Type checker OK"
-                 print $ evalN 100 ast
+--                 print $ evalN 100 ast
                  let lines = map (show . pretty) (codeGen ast)
                  output <- openFile "asm/prog.asm" WriteMode
                  forM_ lines putStrLn

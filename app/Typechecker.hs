@@ -248,6 +248,10 @@ typeofExpr c (ExprCall id args) = do
         then return t -- return type of function
         else typeError ["function arguments do not match"]
         -- may not match either in arity or mismatch in arg type
+-- WE ARE NOT CHECKING THE TYPE OF METHOD CALLS!!
+-- WE ARE NOT CHECKING THE TYPE OF METHOD CALLS!!
+-- WE ARE NOT CHECKING THE TYPE OF METHOD CALLS!!
+typeofExpr c (ExprMethodCall _ _ _) = return $ TypeBits 0
 typeofExpr ctx (ExprConstruct id es) = do
   case lookupCons id ctx of
     Just (ps, t) -> do

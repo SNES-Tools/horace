@@ -35,7 +35,7 @@ maximalRange = (minRange, maxRange)
 
 data Type
   = TypeArray Type Word   -- not implemented
-  | TypeSprite String     -- not implemented
+  | TypeSprite String
   | TypeBits Word
   | TypeRange Int Int
   | TypeUser String       -- name of string
@@ -49,6 +49,7 @@ data Type
   | TypeAbsPtr  -- for sprite object position
   | TypeVariant Word      -- ID for variant tag
   | TypeDummy             -- dummy
+  | TypeSpriteSized Word  -- name, size
   deriving Show
 
 data PalType = PalSprite deriving Show

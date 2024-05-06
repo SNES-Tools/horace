@@ -42,7 +42,10 @@ codeGenMode mode = do
           , palsDict = map (\(Palette n t _) -> (n, t)) (modePals mode)
           , spriteDict =
               concatMap
-                (\(Sprite n i _ _ _) -> [(i', TypeSprite n) | i' <- i])
+                (\(Sprite _ i _ s _) ->
+                   [ (i', TypeSpriteSized $ 2 * (fromIntegral $ length s))
+                   | i' <- i
+                   ])
                 (modeSprites mode)
           , gvarDict = []
           , mvarDict = map (\(MVar id t _) -> (id, t)) (modeVars mode)
@@ -116,8 +119,8 @@ codeGenMeth ctx ins (Func name ps _ expr) = do
   let ctx' =
         setLocals
           (("", TypeLongPtr)
-             : (reverse $ map (\(Param n t) -> (n, t)) ps)
-             ++ [("self", TypeAbsPtr)])
+             : ("self", TypeAbsPtr)
+             : (reverse $ map (\(Param n t) -> (n, t)) ps))
           ctx
   body <- codeGenExpr ctx' expr
   return $ concat [ins, [Label name], body, [RTL]]
@@ -274,6 +277,17 @@ codeGenExpr ctx (ExprCall f exprs) = do
         [ args
         , [JSL (Label24 f)]
         , replicate (length exprs) PLX -- clobbers P
+        ]
+codeGenExpr ctx (ExprMethodCall sprite meth exprs) = do
+  let addr = lookupSpriteAddress sprite ctx
+  args <- codeGenArgs ctx exprs
+  return
+    $ concat
+        [ args
+        , [LDA (Imm16 $ fromIntegral addr)]
+        , [PHA]
+        , [JSL (Label24 meth)]
+        , replicate (1 + length exprs) PLX -- clobbers P
         ]
 codeGenExpr ctx (ExprConstruct id exprs) = do
   let Just (ts, TypeVariant tag) = lookupCons id ctx

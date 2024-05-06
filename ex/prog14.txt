@@ -40,6 +40,7 @@ mode PalTest {
     else
         holder <- transmute[0, 10000](holder - r1)
 
+    foo.run()
   }
   functions {
   }
@@ -58,9 +59,8 @@ mode PalTest {
         x: range[0, 12] = transmute[0, 12](r6)
       }
       methods {
-        run(): void {
+        run(): range[0, 12] {
           x
-          void
         }
       }
     }

@@ -182,6 +182,14 @@ lookupCG id ctx =
         else lookupOff (off + sizeofType t) key rest
     lookupOff _ _ [] = Nothing
 
+lookupSpriteAddress :: Id -> CodeContext -> Word
+lookupSpriteAddress id ctx = go 0 (spriteDict ctx)
+  where
+    go addr ((inst, TypeSpriteSized n):cs) =
+      if id == inst
+        then addr
+        else go (addr + n) cs
+
 replace :: (Eq a) => a -> b -> [(a, b)] -> Maybe [(a, b)]
 replace a b (x@(a', _):xs) = do
   if a == a'
