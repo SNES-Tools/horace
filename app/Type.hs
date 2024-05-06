@@ -46,6 +46,7 @@ data Type
   | TypeAnimation
   -- internal to code generator:
   | TypeLongPtr
+  | TypeAbsPtr  -- for sprite object position
   | TypeVariant Word      -- ID for variant tag
   | TypeDummy             -- dummy
   deriving Show

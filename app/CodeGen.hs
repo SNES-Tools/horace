@@ -52,11 +52,13 @@ codeGenMode mode = do
   pals <- codeGenPals (modePals mode)
   init <- codeGenMVars ctx (modeVars mode)
   svarInit <- codeGenSpriteInits ctx (modeSprites mode)
+  meths <- codeGenMeths ctx (modeSprites mode)
   funcs <- codeGenFuncs ctx (modeFuncs mode)
   main <- codeGenExpr ctx (modeMain mode)
   return
     $ concat
         [ funcs
+        , meths
         , [Label "main"]
         , main
         , [RTL]
@@ -91,6 +93,31 @@ codeGenFunc ctx ins (Func name ps _ expr) = do
   let ctx' =
         setLocals
           (("", TypeLongPtr) : (reverse $ map (\(Param n t) -> (n, t)) ps))
+          ctx
+  body <- codeGenExpr ctx' expr
+  return $ concat [ins, [Label name], body, [RTL]]
+
+codeGenMeths :: CodeContext -> [Sprite] -> Unique [Instruction]
+codeGenMeths ctx sprites = do
+  methods <-
+    mapM
+      (\s ->
+         let ctx' =
+               foldr
+                 extendSVar
+                 ctx
+                 (map (\(MVar n t _) -> (n, t)) (spriteState s))
+          in foldM (codeGenMeth ctx') [] (spriteMeths s))
+      sprites
+  return $ concat methods
+
+codeGenMeth :: CodeContext -> [Instruction] -> Func -> Unique [Instruction]
+codeGenMeth ctx ins (Func name ps _ expr) = do
+  let ctx' =
+        setLocals
+          (("", TypeLongPtr)
+             : (reverse $ map (\(Param n t) -> (n, t)) ps)
+             ++ [("self", TypeAbsPtr)])
           ctx
   body <- codeGenExpr ctx' expr
   return $ concat [ins, [Label name], body, [RTL]]
@@ -138,6 +165,10 @@ codeGenExpr ctx (ExprVar id) =
   case lookupCG id ctx of
     Absolute addr -> return [LDA $ Abs (fromIntegral addr)]
     Local off -> return [LDA $ Stack (fromIntegral off)]
+    AbsLong addr -> do
+      let Local off = lookupCG "self" ctx -- get pointer
+      return
+        $ [LDA $ Stack (fromIntegral off), TAX, LDA $ LongX (fromIntegral addr)]
 {-
   when storing, also get rid of extra stuff. I don't think we always have to do
   this. would need to make sure precisely when there must be extra stuff in the
@@ -155,6 +186,18 @@ codeGenExpr ctx (ExprAssign (LValId id) expr) = do
   case lookupCG id ctx of
     Absolute addr -> return $ code ++ clean ++ [STA $ Abs (fromIntegral addr)]
     Local off -> return $ code ++ clean ++ [STA $ Stack (fromIntegral off)]
+    AbsLong addr -> do
+      let Local off = lookupCG "self" ctx -- get pointer
+      return
+        $ concat
+            [ code
+            , clean
+            , [TAY]
+            , [LDA $ Stack (fromIntegral off)]
+            , [TAX]
+            , [TYA]
+            , [STA $ LongX (fromIntegral addr)]
+            ]
 codeGenExpr ctx (ExprUnOp (UnOpTransmute (Just l) (Just u)) expr) = do
   code <- codeGenExpr ctx expr
   clampTop <- genstr "clamp_top"

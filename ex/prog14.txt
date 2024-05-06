@@ -59,6 +59,8 @@ mode PalTest {
       }
       methods {
         run(): void {
+          x
+          void
         }
       }
     }
