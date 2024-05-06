@@ -503,14 +503,15 @@ buttonToMask ButtonRIGHT = 0x0100
 
 codeGenSpriteInits :: CodeContext -> [Sprite] -> Unique [Instruction]
 codeGenSpriteInits ctx sprites = do
-  let ctx =
+  let ctx' =
         gvarContext
-          $ concatMap
-              (\(Sprite _ i _ s _) ->
-                 concatMap
-                   (\i' -> map (\(MVar id t _) -> (i' ++ "." ++ id, t)) s)
-                   i)
-              sprites
+          ctx
+          (concatMap
+             (\(Sprite _ i _ s _) ->
+                concatMap
+                  (\i' -> map (\(MVar id t _) -> (i' ++ "." ++ id, t)) s)
+                  i)
+             sprites)
   let gvars =
         concatMap
           (\(Sprite _ i _ s _) ->
@@ -518,7 +519,7 @@ codeGenSpriteInits ctx sprites = do
                (\i' -> map (\(MVar id t e) -> MVar (i' ++ "." ++ id) t e) s)
                i)
           sprites
-  foldM (codeGenGVar ctx) [] gvars
+  foldM (codeGenGVar ctx') [] gvars
 
 codeGenGVar :: CodeContext -> [Instruction] -> MVar -> Unique [Instruction]
 codeGenGVar ctx ins (MVar id t e) = do

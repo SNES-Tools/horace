@@ -54,18 +54,19 @@ funcContext fs =
     , lvarDict = []
     }
 
-gvarContext :: [(Id, a)] -> Context a f
-gvarContext gvars =
+-- hackfix for context a f
+gvarContext :: Context a f -> [(Id, a)] -> Context a f
+gvarContext (Context fs gs ps as sps cs _ ms ls) gvars =
   Context
-    { funcDict = []
-    , gfxDict = []
-    , palsDict = []
-    , animDict = []
-    , spriteDict = []
-    , consDict = []
+    { funcDict = fs
+    , gfxDict = gs
+    , palsDict = ps
+    , animDict = as
+    , spriteDict = sps
+    , consDict = cs
     , gvarDict = gvars
-    , mvarDict = []
-    , lvarDict = []
+    , mvarDict = ms
+    , lvarDict = ls
     }
 
 mvarContext :: [(Id, a)] -> Context a f
