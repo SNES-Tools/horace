@@ -269,6 +269,13 @@ typeofExpr ctx (ExprMatch expr cases) = do
     else if and $ map (== head ts) (tail ts)
            then return $ ts !! 0
            else typeError ["nonmatching result type of cases"]
+typeofExpr ctx (ExprDraw id exprX exprY) = do
+  case lookupAnim id ctx of
+    Just _ -> do
+      _ <- typeofExpr ctx exprX
+      _ <- typeofExpr ctx exprY
+      return TypeVoid
+    Nothing -> typeError ["animation not found", id]
 typeofExpr _ _ = Left "feature is undefined"
 
 {-

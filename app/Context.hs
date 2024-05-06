@@ -106,6 +106,9 @@ lookupVar id (Context _ _ _ _ _ _ gs ms ls) = lookup id (ls ++ ms ++ gs)
 lookupFunc :: Id -> Context a f -> Maybe f
 lookupFunc id (Context fs _ _ _ _ cs _ _ _) = lookup id (fs ++ cs)
 
+lookupAnim :: Id -> Context a f -> Maybe a
+lookupAnim id (Context {animDict = as}) = lookup id as
+
 extendFunc :: (Id, f) -> Context a f -> Context a f
 extendFunc f (Context fs gs ps as ss cs ts ms ls) =
   Context (f : fs) gs ps as ss cs ts ms ls
