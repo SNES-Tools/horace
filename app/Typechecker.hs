@@ -25,7 +25,7 @@ typeCheckMode mode
   ctx <- foldM typeCheckState ctx (modeVars mode)
   -- type check functions
   ctx <- foldM typeCheckFunc ctx (modeFuncs mode)
-  ctx <- foldM typeCheckSprite ctx (modeSprites mode)
+  ctx <- foldM typeCheckSprite ctx (modeSprites mode) -- adds sprites and methods
   _ <- typeofExpr ctx (modeMain mode)
   return ()
   where
@@ -88,13 +88,15 @@ typeCheckFunc ctx f = do
     else typeError ["function", show id, "return type does not match"]
 
 typeCheckSprite :: TypeContext -> Sprite -> Result TypeContext
-typeCheckSprite ctx (Sprite name insts anims state meths) = do
+typeCheckSprite ctx (Sprite name insts anims state meths)
   -- sprites should not have access to other sprite instances
   -- but maybe they do?
+ = do
   ctx' <- foldM typeCheckSVar ctx state
   ctx' <- foldM typeCheckAnim ctx' anims
   ctx' <- foldM (typeCheckMeth name) ctx' meths
-  return $ foldr extendSprite ctx [(inst, TypeSprite name) | inst <- insts]
+  ctx'' <- foldM (typeofMeth name) ctx meths -- recheck to add to context
+  return $ foldr extendSprite ctx'' [(inst, TypeSprite name) | inst <- insts]
 
 typeCheckAnim :: TypeContext -> Animation -> Result TypeContext
 typeCheckAnim ctx (Animation name _) =
@@ -124,13 +126,18 @@ typeCheckMeth name ctx (Func id ps t e) = do
   t' <-
     typeofExpr
       (setLocals
-         ((zip (map paramName ps) (map paramType ps))
-            ++ [("self", TypeSprite name)])
+         ((zip (map paramName ps) (map paramType ps)) ++
+          [("self", TypeSprite name)])
          ctx)
       e
   if t == t'
     then return $ extendFunc (id, (map paramType ps, t)) ctx -- think extendFunc
     else typeError ["method", show id, "return type does not match"]
+
+-- hackfix
+typeofMeth :: Id -> TypeContext -> Func -> Result TypeContext
+typeofMeth name ctx (Func id ps t e) = do
+  return $ extendFunc (id, (map paramType ps, t)) ctx -- think extendFunc
 
 -- type checker for the core expression
 -- it is well-typed if we can find a type for it I think
@@ -192,8 +199,9 @@ typeofExpr c (ExprBinOp BinOpBitEor e1 e2) = bitwiseOpType c e1 e2
 typeofExpr c (ExprBinOp BinOpAdd e1 e2) = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
-  case (t1, t2) of
+  case (t1, t2)
     -- bit cases
+        of
     (TypeBits _, TypeBits _) -> bitwiseOpType c e1 e2
     -- range cases
     (TypeRange l1 u1, TypeRange l2 u2) -> return $ TypeRange (l1 + l2) (u1 + u2)
@@ -201,8 +209,9 @@ typeofExpr c (ExprBinOp BinOpAdd e1 e2) = do
 typeofExpr c (ExprBinOp BinOpSub e1 e2) = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
-  case (t1, t2) of
+  case (t1, t2)
     -- bit cases
+        of
     (TypeBits _, TypeBits _) -> bitwiseOpType c e1 e2
     -- range cases
     (TypeRange l1 u1, TypeRange l2 u2) -> return $ TypeRange (l1 - u2) (u1 - l2)
@@ -248,10 +257,18 @@ typeofExpr c (ExprCall id args) = do
         then return t -- return type of function
         else typeError ["function arguments do not match"]
         -- may not match either in arity or mismatch in arg type
--- WE ARE NOT CHECKING THE TYPE OF METHOD CALLS!!
--- WE ARE NOT CHECKING THE TYPE OF METHOD CALLS!!
--- WE ARE NOT CHECKING THE TYPE OF METHOD CALLS!!
-typeofExpr c (ExprMethodCall _ _ _) = return $ TypeBits 0
+typeofExpr c (ExprMethodCall _ id args) = do
+  ts <- mapM (typeofExpr c) args
+  -- first, check type of args is okay
+  f <-
+    case lookupFunc id c of
+      Just t -> return t
+      Nothing -> typeError ["function not found: ", id]
+  case f of
+    (ps, t) ->
+      if ts == ps
+        then return t -- return type of function
+        else typeError ["function arguments do not match"]
 typeofExpr ctx (ExprConstruct id es) = do
   case lookupCons id ctx of
     Just (ps, t) -> do
@@ -326,9 +343,10 @@ typeofPred c (PredBinOp _ p1 p2) = do
 typeofPred c (PredComp _ e1 e2) = do
   t1 <- typeofExpr c e1
   t2 <- typeofExpr c e2
-  case (t1, t2) of
+  case (t1, t2)
     -- comparisons of all integer literals is allowed? because it's obvious?
     -- bit cases
+        of
     (TypeBits b1, TypeBits b2) ->
       if b1 == b2
         then return ()

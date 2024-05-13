@@ -1,0 +1,187 @@
+mode Pong {
+  graphics {
+    Graphics: sprite[11] = "../ex/pong.gfx"
+  }
+  palettes {
+    Red: sprite = [ (00, 00, 00)
+                  , (30, 00, 00)
+                  , (00, 00, 00)
+                  , (00, 00, 00)
+                  , (00, 00, 00)
+                  , (00, 00, 00)
+                  , (00, 00, 00)
+                  , (00, 00, 00)
+                  , (00, 00, 00)
+                  , (00, 00, 00)
+                  , (00, 00, 31)
+                  , (00, 00, 00)
+                  , (00, 00, 00)
+                  , (00, 00, 00)
+                  , (00, 00, 00)
+                  , (00, 00, 00)
+                  ]
+  }
+  types {
+    HorizDirection  { Left, Right }
+    VertDirection   { Up, Down }
+    Player          { One, Two }
+  }
+  state {
+    init: bits[1] = 0
+  }
+  main {
+    if init = 0 then {
+      left.setX(extend[8](16))
+      left.setPlayer(One)
+      right.setX(232)
+      right.setPlayer(Two)
+      init <- 1
+      void
+    } else {
+      var leftPos: range[0, 200] = left.run()
+      var rightPos: range[0, 200] = right.run()
+      bouncingBall.runBouncingBall()
+      bouncingBall.checkCollision(leftPos, rightPos)
+    }
+  }
+  functions {
+  }
+  sprites {
+    Paddle(left, right) {
+      animations {
+        CursorFrame {
+          at (0, 0): Graphics[5] in Red
+          at (0, 8): Graphics[5] in Red
+          at (0, 16): Graphics[5] in Red
+        }
+      }
+      state {
+        x: bits[8] = extend[8](50)
+        y: range[0, 200] = transmute[0, 200](r50)
+
+        player: Player = One
+      }
+      methods {
+        setX(val: bits[8]): bits[8] {
+          x <- val
+        }
+
+        setPlayer(p: Player): Player {
+          player <- p
+        }
+
+        run(): range[0, 200] {
+          match player with {
+            One -> {
+              if holding[1, UP] then
+                y <- transmute[0, 200](y - r1)
+              else if holding[1, DOWN] then
+                y <- transmute[0, 200](y + r1)
+              else
+                y
+            }
+            Two -> {
+              if holding[2, UP] then
+                y <- transmute[0, 200](y - r1)
+              else if holding[2, DOWN] then
+                y <- transmute[0, 200](y + r1)
+              else
+                y
+            }
+          }
+            
+          draw[CursorFrame](x, y)
+          y
+        }
+      }
+    }
+
+
+    BouncingBall(bouncingBall) {
+      animations {
+        BallUpRight {
+          at (0, 0): Graphics[1] in Red
+        }
+        BallUpLeft {
+          at (0, 0): Graphics[2] in Red
+        }
+        BallDownRight {
+          at (0, 0): Graphics[3] in Red
+        }
+        BallDownLeft {
+          at (0, 0): Graphics[4] in Red
+        }
+      }
+      state {
+        x: range[0, 248] = transmute[0, 248](r53)
+        y: range[0, 216] = transmute[0, 216](r80)
+        horizDir: HorizDirection = Right
+        vertDir:  VertDirection  = Down
+      }
+      methods {
+        runBouncingBall(): void {
+          if x = r0 or x = r248 then {
+            x <- transmute[0, 248](r128)
+            void
+          } else {
+            void
+          }
+        
+          match horizDir with {
+            Left  -> {
+              if x = r0 then
+                horizDir <- Right
+              else
+                horizDir
+              x <- transmute[0, 248](x - r1)
+            }
+            Right -> {
+              if x = r248 then
+                horizDir <- Left
+              else
+                horizDir
+              x <- transmute[0, 248](x + r1)
+            }
+          }
+
+          match vertDir with {
+            Up  -> {
+              if y = r0 then
+                vertDir <- Down
+              else
+                vertDir
+              y <- transmute[0, 216](y - r1)
+            }
+            Down -> {
+              if y = r216 then
+                vertDir <- Up
+              else
+                vertDir
+              y <- transmute[0, 216](y + r1)
+            }
+          }
+
+          match horizDir with {
+            Left -> match vertDir with {
+              Up   -> draw[BallUpLeft](x, y)
+              Down -> draw[BallDownLeft](x, y)
+            }
+            Right -> match vertDir with {
+              Up   -> draw[BallUpRight](x, y)
+              Down -> draw[BallDownRight](x, y)
+            }
+          }            
+        }
+        checkCollision(ly: range[0, 200], ry: range[0, 200]): void {
+          if x = r24 and ly - r8 <=$ y and y <=$ ly + r24 then {
+            horizDir <- Right
+            void
+          } else if x = r224 and ry - r8 <=$ y and y <=$ ry + r24 then {
+            horizDir <- Left
+            void
+          } else void
+        }
+      }
+    }
+  }
+}
